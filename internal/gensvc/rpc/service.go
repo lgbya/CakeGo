@@ -376,8 +376,8 @@ func (s *Service) PutMsg(msg *Msg) {
 }
 
 // =====================================
-func Send(dest string, cmd string, args any, timeout time.Duration) bool {
-	return SendAfter(0, dest, cmd, args, timeout)
+func Send(dest string, cmd string, args any) bool {
+	return SendAfter(0, dest, cmd, args, 0)
 }
 
 func SendAfter(delay time.Duration, dest string, cmd string, args any, timeout time.Duration) bool {

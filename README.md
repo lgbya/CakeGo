@@ -1,5 +1,11 @@
-模仿erlang的gen server实现进程单游戏服Actor 模型的mmo游戏框架
-目录
+# CakeGo 游戏服务框架
+## 模仿erlang的gen server实现进程单游戏服Actor 模型的mmo游戏框架
+
+## 一、项目简介
+基于 Golang 协程实现轻量 Actor 模型，借鉴 Erlang 网游成熟进程架构，网关+玩家+场景多Actor隔离。
+
+## 二、目录结构
+```text
 CakeGo/
 ├── cmd                     # 服务启动入口
 │   └── server
@@ -27,14 +33,119 @@ CakeGo/
 ├── sql                     # MySQL建表语句、初始化数据
 └── test_client             # TCP压测客户端、模拟多玩家登录测试
 
-安装命令
-sh run.sh install 平台号 服务器号
+```
+
+## 三、运行命令
+```bash
+#安装命令
+#sh run.sh install 平台号 服务器号
 例：sh run.sh install 1 1
 
-启动命令
-sh run.sh start 平台号 服务器号
+#启动命令
+#sh run.sh start 平台号 服务器号
 例：sh run.sh start 1 1
 
-压测客户端
-sh run.sh test 平台号 服务器号
+#压测客户端
+#sh run.sh test 平台号 服务器号
 例：sh run.sh test 1 1
+
+
+```
+## 四、gen server 模板
+1.文件必须放在internal/game/services目录下
+
+2.文件名必须带_service
+```go
+package testsvc
+
+import (
+	"cake/internal/gensvc/rpc"
+	"fmt"
+)
+
+//包内必须带有结构体State
+type State struct {
+}
+
+type Service struct {
+	*rpc.Service
+}
+
+//启动方法
+func Start() (*rpc.Service, error) {
+	s := &Service{}
+	//协程配置必须使用rpc.NewCfg()
+	cfg := rpc.NewCfg()
+	//Cfg{
+	//	InitArgs 初始方法Init时的第二个参数
+	//	StartTimeout 协程启动超时时间
+	//	SendFn:      自定义send方法
+	//	SendMaxCap:  缓冲chan最大容量多少
+	//}
+	cfg.SendMaxCap = 1
+	//rpc启动方法 参数1 协程注册名，协程注册结构，协程配置
+	//也可以用rpc.Start("test", s)启动协程，走默认配置
+	roleRpc, err := rpc.StartWithCfg("test", s, cfg)
+	return roleRpc, err
+}
+
+func (s *Service) SvcName() string {
+	return "test"
+}
+
+// 必须实现，每才启动协程会调用一次该方法，必须返回结构体State和镶嵌*rpc.Service
+func (s *Service) Init(r *rpc.Service, args any) (any, error) {
+	s.Service = r
+	return &State{}, nil
+}
+
+
+// 必须实现，每才启动协程结束会调用一次该方法 
+func (s *Service) Stop(rawState any) {
+	state := rawState.(*State)
+}
+
+//rpc 方法，只有方法名前面带有rpc并且符合类型 func(state State, args any) (any, error) 会自动注册
+func (s *Service) RpcTest(state State, args any) (any, error) {
+	fmt.Println("send_test", args)
+	//返回参数，如果是通过call调用，同步返回给调用方，send调用忽略
+	return nil, nil
+}
+
+var _ rpc.GenService = &Service{}
+
+```
+
+## 五、协程服务间通信方法
+```go
+//启动rpc服务
+testRpc, err := rpc.StartWithCfg("test", s)
+
+//有缓存chan发送，协程内chan接收到信息后会执行RpcTest方法
+//会等待多少秒发送成功，发送不成功就丢弃
+testRpc.SendTimeout(rpcid.RpcTest, "hello world", 5*time.Second)
+//默认等待5秒，发送不成功就丢弃
+testRpc.Send5S(rpcid.RpcTest, "hello world")
+//无等待，chan满了直接丢弃
+testRpc.Send(rpcid.RpcTest, "hello world")
+//协程的chan接受到信息后延后3秒再执行
+testRpc.SendAfter(3*time.Second,rpcid.RpcTest, "hello world",, 5*time.Second)
+
+//无缓冲chan发送，同步返回结果
+relust, err := testRpc.CallTimeout(rpcid.RpcTest, "hello world", 5*time.Second)
+relust, err := testRpc.Call5S(rpcid.RpcTest, "hello world")
+
+//通过协程名发送
+rpc.Call5s("test", rpcid.RpcTest, "hello world")
+rpc.CallTimeout("test", rpcid.RpcTest, "hello world", 5*time.Second)
+rpc.Send("test", rpcid.RpcTest, "hello world")
+rpc.AfterSend(3*time.Second, "test", rpcid.RpcTest, "hello world")
+```
+
+## 六、协程服务的定时器
+```go
+func (s *Service) registerTimer() {
+    s.AddTimer(定时器名唯一, 执行间隔, 执行次数（-1是循环）, 执行方法, 执行参数)
+    s.AddTimer("TimerSaveRoleDB", 5*time.Second, -1, s.TimerSaveRoleDB, nil)
+}
+```
