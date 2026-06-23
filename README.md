@@ -11,8 +11,6 @@ CakeGo/
 │   └── server
 │       └── main.go         # 程序入口：初始化配置、启动网关、启动所有游戏Actor服务
 ├── env                     # 环境配置
-│   ├── local.yaml          
-│   └── init.go           
 ├── internal                # 内部业务代码（禁止外部导入）
 │   ├── conf                # 配置表解析、导表工具（Excel转json/二进制配置）
 │   ├── game                # 游戏核心业务逻辑
