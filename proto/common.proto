@@ -1,0 +1,27 @@
+syntax = "proto3";
+import "google/protobuf/descriptor.proto";
+
+option go_package = "proto/pb;pb";
+
+package common;
+message notice {
+  uint32 err_code = 1;  //0为成功
+  string err_msg = 2;
+}
+
+extend google.protobuf.MessageOptions {
+  int32 cmd_id = 50001;
+}
+
+message pos {
+  uint32 x = 1;
+  uint32 y = 2;
+}
+
+message scene_role {
+  uint64 role_id = 1; //角色id
+  uint32 server_id = 2; //服务器id
+  uint32 plat_id = 3; //平台id
+  string role_name = 4; //平台id
+  pos pos = 5;
+}

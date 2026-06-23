@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+import public "proto/common.proto";
+
+option go_package = "proto/pb;pb";
+
+// 包名
+package scene;
+
+//进入场景 优先scene_id，如果scene_id为0 转大场景map_id
+message EnterSceneC2S{
+  option (common.cmd_id) = 2000; // 协议
+  uint32 scene_id = 1; //场景id
+  uint32 map_id = 2; //地图id
+}
+
+message EnterSceneS2C{
+  option (common.cmd_id) = 2000; // 协议
+  common.notice common_notice = 1;
+  uint32 scene_id = 2; //场景id
+  uint32 map_id = 3; //地图id
+  common.pos pos = 4;
+}
+
+//移动
+message MovePosC2S{
+  option (common.cmd_id) = 2001; // 协议
+  common.pos pos = 3;
+}
+
+message MovePosS2C{
+  option (common.cmd_id) = 2001; // 协议
+  uint64 role_id = 1; //角色id
+  uint32 map_id = 2; //地图id
+  common.pos pos = 3;
+}
+
+//角色视野列表
+message RoleViewListS2C{
+  option (common.cmd_id) = 2002; // 协议
+  uint32 type = 1; //1:完整列表 2:新增列表
+  uint32 scene_id = 2; //地图id
+  uint32 map_id = 3; //地图id
+  repeated common.scene_role scene_roles = 4; //
+}
+
+//角色视野删除
+message RoleViewDelS2C{
+  option (common.cmd_id) = 2003; // 协议
+  uint64 role_id = 1; //
+}

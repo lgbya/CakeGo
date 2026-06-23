@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+import public "proto/common.proto";
+
+option go_package = "proto/pb;pb";
+
+
+// 包名
+package login;
+
+//心跳包
+//code=1000
+message HeartbeatC2S{
+  option (common.cmd_id) = 1000; // 协议
+  int64 client_time = 1; //客户端ping时间
+}
+
+message HeartbeatS2C{
+  option (common.cmd_id) = 1000; // 协议
+  int64 client_time = 1; //客户端ping时间
+  int64 server_time = 2; //服务器时间
+}
+
+// 尝试登录系统
+//code=1001
+message AccountAuthC2S {
+  option (common.cmd_id) = 1001; // 协议
+  string  account = 1;     // 账号
+  uint32  server_id = 2;     // 服务器id
+  uint32  plat_id = 3;     // 平台ID
+  string  ticket = 4;     // 通过sdk获取的验证信息
+  string  client_version = 5;  //客户端版本
+  uint32  channel_id = 6;     // 渠道ID（分包、联运渠道）
+  //  uint32  os_type     = 5;     // 系统类型：1安卓/2ios/3window
+  //  string  app_id      = 6;
+}
+
+message AccountAuthS2C{
+  option (common.cmd_id) = 1001; // 协议
+  common.notice common_notice = 1;
+  bool  is_auth = 2;   //是否认证通过
+}
+
+//code=1002
+message SelectRolesC2S{
+  option (common.cmd_id) = 1002; // 协议
+  string  account = 1;     // 账号
+  uint32  plat_id = 2;     // 首选：平台ID
+  uint32  server_id = 3;     // 服务器id
+}
+
+message SelectRolesS2C{
+  option (common.cmd_id) = 1002; // 协议
+  common.notice common_notice = 1;
+  repeated RoleInfo role_list = 2; // 角色列表
+}
+
+
+
+//code=1003
+message CreateRoleC2S{
+  option (common.cmd_id) = 1003; // 协议
+  string name = 1;//角色名
+  uint32 server_id = 2; //服务器id
+  uint32 plat_id = 3; //平台id
+  uint32 gender = 4; //性别
+  uint32 career = 5; //职业
+
+}
+
+message CreateRoleS2C{
+  option (common.cmd_id) = 1003; // 协议
+  common.notice common_notice = 1;
+  uint64 role_id = 2; //角色id
+  uint32 server_id = 3; //服务器id
+  uint32 plat_id = 4; //平台i
+  string name = 5;//角色名
+  uint32 gender = 6; //性别
+  uint32 career = 7; //职业
+  uint32 lv = 8; //等级
+}
+
+
+//code=1004
+message LoginRoleC2S{
+  option (common.cmd_id) = 1004; // 协议
+  uint64 role_id = 1;//角色名
+}
+
+message LoginRoleS2C{
+  option (common.cmd_id) = 1004; // 协议
+  common.notice common_notice = 1;
+  uint64 role_id = 2; //角色id
+  uint32 server_id = 3; //服务器id
+  uint32 plat_id = 4; //平台id
+  string name = 5;//角色名
+  uint32 gender = 6; //性别
+  uint32 career = 7; //职业
+  uint32 lv = 8; //等级
+}
+
+
+//============================================================
+message RoleInfo {
+  uint64 role_id = 1;      // 角色id
+  uint32 server_id = 2;    // 角色ID
+  uint32 plat_id = 3;       // 平台id
+  string name = 4;         // 角色名
+  uint32 gender = 5;          // 性别
+  uint32 lv = 6;           // 等级
+  uint32 career = 7;          // 职业
+}
