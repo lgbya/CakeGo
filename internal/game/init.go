@@ -10,6 +10,8 @@ import (
 	"cake/internal/gensvc"
 	"cake/internal/pkg/db"
 	"cake/internal/pkg/logger"
+	"cake/internal/pkg/pprof"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"syscall"
@@ -19,6 +21,7 @@ import (
 var initFn = []func(){
 	env.Init,
 	logger.Init,
+	pprof.Init,
 	db.Init,
 	gensvc.Init,
 	mapsvc.Init,

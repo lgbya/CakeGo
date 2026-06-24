@@ -16,8 +16,9 @@ log:
   banProto: [1000]
 
 #监控
-metric:
-  addr: ":9091"
+monitoring:
+  metricAddr: ":9091"
+  pprofAddr: ":6060"
 
 gate:
   addr: "0.0.0.0:8888"

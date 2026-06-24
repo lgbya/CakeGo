@@ -3,6 +3,7 @@ package metric
 import (
 	"cake/env"
 	"cake/internal/pkg/logger"
+	"cake/internal/util/sys"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -64,16 +65,16 @@ func Init() {
 	reg.MustRegister(RpcDuration)
 	reg.MustRegister(RpcSlowTotal)
 	reg.MustRegister(SendQueueLen)
-	addr := env.GetString("metric.addr")
-	StartHTTP(addr)
+	StartHTTP()
 }
 
 // StartHTTP 启动监控接口
-func StartHTTP(addr string) {
-	go func() {
+func StartHTTP() {
+	addr := env.GetString("monitoring.metricAddr")
+	sys.SafeGo(func() {
 		http.Handle("/metrics", promhttp.Handler())
 		if err := http.ListenAndServe(addr, nil); err != nil {
 			logger.Errorf("prometheus metrics start failed: %v", err)
 		}
-	}()
+	})
 }
