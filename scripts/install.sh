@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 trim() {
     echo "$1" | sed 's/\r//g' | xargs

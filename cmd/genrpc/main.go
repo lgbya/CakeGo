@@ -320,5 +320,5 @@ func GetPkgInfo(filePath string) (string, string) {
 }
 
 func TrimGamePrefix(wd, absPath string) string {
-	return strings.TrimPrefix(absPath, filepath.Dir(wd)+"/")
+	return "cake/" + strings.TrimPrefix(absPath, wd+"/")
 }

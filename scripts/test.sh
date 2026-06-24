@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 if [ $# -ne 2 ]; then
     echo "使用方式：$0  平台id 区服id"

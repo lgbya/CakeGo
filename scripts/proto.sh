@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 protoc \
 	-I=. \
 	-I=/usr/local/include \

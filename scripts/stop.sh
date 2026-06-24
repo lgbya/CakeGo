@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 # 判断传入参数是否为2个
 if [ $# -ne 2 ]; then
