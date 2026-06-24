@@ -78,9 +78,9 @@ irouter.Reg().SceneCmd(&pb.MovePosC2S{}, s.MovePosC2S)
 
 ## 五、启动gen server 协程
 ### 1.gen server 模板
-1.文件必须放在internal/game/services目录下
-
-2.文件名必须带_service
+注意事项：
+	1.文件必须放在internal/game/services目录下
+	2.文件名必须带_service
 ```go
 package testsvc
 
