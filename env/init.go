@@ -33,7 +33,7 @@ var cfg = &Config{}
 var base = &Base{}
 
 func Init() {
-	env := flag.String("env", "local", "running environment: local")
+	env := flag.String("env", "app", "运行环境：app")
 	flag.Parse()
 
 	// 初始化 viper 实例
@@ -56,7 +56,7 @@ func Init() {
 	v.SetEnvPrefix("GAME")
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	log.Printf("running in %s mode", *env)
+	//log.Printf("running in %s mode", *env)
 
 	if err := v.Unmarshal(cfg); err != nil {
 		panic(err)

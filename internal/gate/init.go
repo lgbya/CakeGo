@@ -17,7 +17,8 @@ func Init() {
 			panic(err)
 		}
 		defer listener.Close()
-		logger.Info("TCP 服务已启动：127.0.0.1:8888 ✅")
+
+		logger.Infof("Success	TCP 服务已启动 %s", addr)
 		// 循环接收客户端连接
 		conn.Loop(listener)
 	})

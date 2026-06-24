@@ -14,7 +14,7 @@ protoc \
   --cmdid-gen_out=proto/pb \
   proto/*.proto
 
-echo "✅ 协议编译完成"
+echo "Success 协议编译完成"
 
 
 go run ./cmd/proto/gen-router/main.go

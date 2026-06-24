@@ -38,7 +38,7 @@ func InitMysql() {
 	sqlDB.SetConnMaxLifetime(3 * time.Minute)
 
 	dbInst = db
-	zlogger.Infof("MySQL 连接成功 ✅")
+	zlogger.Infof("Success	MySQL 连接成功")
 }
 
 func CloseMysql() {

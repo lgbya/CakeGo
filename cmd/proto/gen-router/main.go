@@ -113,14 +113,13 @@ func Routes() []irouter.IRoute {
 		return fmt.Errorf("写入路由文件失败: %w", err)
 	}
 
-	//fmt.Printf("✅ 路由生成成功 | 输出文件: %s\n", outPath)
-	fmt.Printf("✅ 路由生成成功\n")
+	fmt.Printf("Success	路由生成\n")
 	return nil
 }
 
 func main() {
 	if err := GenerateRoutes(); err != nil {
-		fmt.Printf("❌ 路由生成失败: %v\n", err)
+		fmt.Printf("Fail	路由生成失败: %v\n", err)
 		os.Exit(1)
 	}
 }

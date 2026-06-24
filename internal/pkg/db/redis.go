@@ -20,5 +20,5 @@ func InitRedis() {
 	if cacheInst == nil {
 		panic("redis init failed")
 	}
-	zlogger.Info("redis 连接成功 ✅")
+	zlogger.Info("success	redis 连接成功")
 }
