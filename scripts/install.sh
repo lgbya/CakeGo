@@ -111,6 +111,7 @@ else
     exit 1
 fi
 
+go mod tidy
 go run cmd/genrpc/main.go
 sh ./scripts/proto.sh
 #go run cmd/server/main.go
