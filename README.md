@@ -11,8 +11,6 @@ CakeGo/
 │   └── server
 │       └── main.go         # 程序入口：初始化配置、启动网关、启动所有游戏Actor服务
 ├── env                     # 环境配置
-│   ├── local.yaml          
-│   └── init.go           
 ├── internal                # 内部业务代码（禁止外部导入）
 │   ├── conf                # 配置表解析、导表工具（Excel转json/二进制配置）
 │   ├── game                # 游戏核心业务逻辑
@@ -39,6 +37,7 @@ CakeGo/
 ```bash
 #注意事项如果协议生成错误，确认google/protobuf的位置，修改scripts/proto.sh的/usr/local/include为你的路径
 #安装命令
+#注意事项如果协议生成错误，确认google/protobuf的位置，修改scripts/proto.sh的/usr/local/include为你的路径
 #sh run.sh install 平台号 服务器号
 例：sh run.sh install 1 1
 
@@ -50,12 +49,39 @@ CakeGo/
 #sh run.sh test 平台号 服务器号
 例：sh run.sh test 1 1
 
+#编译协议
+#sh run.sh proto 
+例：sh run.sh proto
+
 
 ```
-## 四、gen server 模板
-1.文件必须放在internal/game/services目录下
+## 四、绑定协议路由
+### 1.绑定网关的路由
+```go
+irouter.Reg().ConnCmd(协议结构体, 绑定方法)
+//例子
+irouter.Reg().ConnCmd(&pb.HeartbeatC2S{}, r.HeartbeatC2S)
+```
 
-2.文件名必须带_service
+### 2.绑定角色的路由
+```go
+irouter.Reg().RoleCmd(协议结构体, 绑定方法)
+//例子
+irouter.Reg().RoleCmd(&pb.HeartbeatC2S{}, r.HeartbeatC2S)
+```
+
+### 3.绑定场景的路由
+```go
+irouter.Reg().SceneCmd(协议结构体, 绑定方法)
+//例子
+irouter.Reg().SceneCmd(&pb.MovePosC2S{}, s.MovePosC2S)
+```
+
+## 五、启动gen server 协程
+### 1.gen server 模板
+注意事项：
+	1.文件必须放在internal/game/services目录下
+	2.文件名必须带_service
 ```go
 package testsvc
 
@@ -117,7 +143,7 @@ var _ rpc.GenService = &Service{}
 
 ```
 
-## 五、协程服务间通信方法
+### 2.协程服务间通信方法
 ```go
 //启动rpc服务
 testRpc, err := rpc.StartWithCfg("test", s)
@@ -143,7 +169,7 @@ rpc.Send("test", rpcid.RpcTest, "hello world")
 rpc.AfterSend(3*time.Second, "test", rpcid.RpcTest, "hello world")
 ```
 
-## 六、协程服务的定时器
+### 3.协程服务的定时器
 ```go
 func (s *Service) registerTimer() {
     s.AddTimer(定时器名唯一, 执行间隔, 执行次数（-1是循环）, 执行方法, 执行参数)
