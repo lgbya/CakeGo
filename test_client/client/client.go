@@ -190,7 +190,7 @@ func (c *Client) StartAutoWalk() {
 
 				// 发送客户端上报移动协议
 				c.MovePosC2S(uint32(randomX), uint32(randomY))
-				//logger.Infof("玩家[%s]自动行走：随机坐标(%d,%d)", c.Account, randomX, randomY)
+				logger.Infof("玩家[%s]自动行走：随机坐标(%d,%d)", c.Account, randomX, randomY)
 			}
 		}
 	}()
