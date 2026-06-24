@@ -45,14 +45,17 @@ CakeGo/
 #sh run.sh start 平台号 服务器号
 例：sh run.sh start 1 1
 
+#关闭命令
+#sh run.sh stop 平台号 服务器号
+例：sh run.sh stop 1 1
+
 #压测客户端
 #sh run.sh test 平台号 服务器号
 例：sh run.sh test 1 1
 
-#编译协议
+#单独编译协议
 #sh run.sh proto 
 例：sh run.sh proto
-
 
 ```
 ## 四、绑定协议路由
@@ -142,8 +145,16 @@ func (s *Service) RpcTest(state State, args any) (any, error) {
 var _ rpc.GenService = &Service{}
 
 ```
+### 2.rpcid
+基于ast静态分析，会筛选出internal/game/services的Service结构体，带有前缀的Rpc方法会自动注册并生成常量id
 
-### 2.协程服务间通信方法
+如：func (s *Service) RpcTest(state State, args any) (any, error)会自动生成常量rpcid.RpcTest
+
+通过id发送到chan，在协程内部调用对应的方法
+
+生成的分析文件在internal/gensvc/rpcgen
+
+### 3.服务协程间通信方法
 ```go
 //启动rpc服务
 testRpc, err := rpc.StartWithCfg("test", s)
@@ -169,7 +180,7 @@ rpc.Send("test", rpcid.RpcTest, "hello world")
 rpc.AfterSend(3*time.Second, "test", rpcid.RpcTest, "hello world")
 ```
 
-### 3.协程服务的定时器
+### 4.服务协程内部的定时器
 ```go
 func (s *Service) registerTimer() {
     s.AddTimer(定时器名唯一, 执行间隔, 执行次数（-1是循环）, 执行方法, 执行参数)

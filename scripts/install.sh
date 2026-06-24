@@ -115,7 +115,7 @@ fi
 go run cmd/genrpc/main.go
 sh ./scripts/proto.sh
 #go run cmd/server/main.go
-go build -o ./${GAME_DIR}/game_server ./cmd/server
+go build -o ./${GAME_DIR}/game_server_${platID}_${serverID} ./cmd/server
 
 echo "===== 部署完成 ====="
 
