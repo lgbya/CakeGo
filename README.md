@@ -123,14 +123,14 @@ func (s *Service) SvcName() string {
 	return "test"
 }
 
-// 必须实现，每才启动协程会调用一次该方法，必须返回结构体State和镶嵌*rpc.Service
+// 必须实现，每次启动协程会自动调用一次该方法，必须返回结构体State和镶嵌*rpc.Service
 func (s *Service) Init(r *rpc.Service, args any) (any, error) {
 	s.Service = r
 	return &State{}, nil
 }
 
 
-// 必须实现，每才启动协程结束会调用一次该方法 
+// 必须实现，每次协程结束会自动调用一次该方法 ，如果初始化失败不会执行
 func (s *Service) Stop(rawState any) {
 	state := rawState.(*State)
 }
