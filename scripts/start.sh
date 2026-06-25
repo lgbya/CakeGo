@@ -14,7 +14,7 @@ serverID="$2"
 GAME_DIR="./bin/game_${platID}_${serverID}"
 
 go run cmd/genrpc/main.go
-#sh ./scripts/proto.sh
+sh ./scripts/proto.sh
 go build -o ./${GAME_DIR}/game_server_${platID}_${serverID} ./cmd/server
 
 #go run cmd/server/main.go
