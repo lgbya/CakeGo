@@ -68,50 +68,7 @@ sed -i "s/serverId: [0-9]*/serverId: ${serverID}/" "${TARGET_ENV}/app.yaml"
 sed -i "s/platId : [0-9]*/platId : ${platID}/" "${TARGET_ENV}/app.yaml"
 sed -i "s/name: \"game_db\"/name: \"game_db_${platID}_${serverID}\"/" "${TARGET_ENV}/app.yaml"
 
-
-#===========创建数据库
-
-# SQL脚本路径
-SQL_FILE="./sql/game_db.sql"
-# 临时SQL文件（防止修改原模板）
-TMP_SQL="./sql/tmp_game_db.sql"
-# 目标数据库名
-TARGET_DB="game_db_${platID}_${serverID}"
-
-cp "${SQL_FILE}" "${TMP_SQL}"
-if [[ $(uname -s) == MINGW* || $(uname -s) == MSYS* ]]; then
-    sed -i '' "s/game_db/${TARGET_DB}/g" "${TMP_SQL}"
-else
-    sed -i "s/game_db/${TARGET_DB}/g" "${TMP_SQL}"
-fi
-
-YAML_FILE="${TARGET_ENV}/app.yaml"
-
-MYSQL_HOST=$(get_yaml_val "host")
-MYSQL_PORT=$(get_yaml_val "port")
-MYSQL_USER=$(get_yaml_val "user")
-MYSQL_PASS=$(get_yaml_val "pass")
-
-
-# 执行SQL脚本
-echo "开始执行SQL初始化库表：${TARGET_DB}"
-
-
-# 执行mysql，端口不加引号
-mysql -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USER} -p${MYSQL_PASS} < "${TMP_SQL}"
-
-# 判断SQL执行结果
-if [ $? -eq 0 ]; then
-    echo "数据库 ${TARGET_DB} 初始化成功！"
-    # 删除临时SQL文件
-    rm -f "${TMP_SQL}"
-else
-    echo "数据库初始化失败，请检查MySQL服务或账号密码！"
-    rm -f "${TMP_SQL}"
-    exit 1
-fi
-
-go mod tidy
+#go mod tidy
 go run cmd/genrpc/main.go
 sh ./scripts/proto.sh
 #go run cmd/server/main.go

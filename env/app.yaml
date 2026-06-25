@@ -1,5 +1,8 @@
 env: "app"
 
+gate:
+  addr: "0.0.0.0:8888"
+
 base:
   platId : 1
   serverId: 1
@@ -19,9 +22,6 @@ log:
 monitoring:
   metricAddr: ":9091"
   pprofAddr: ":6060"
-
-gate:
-  addr: "0.0.0.0:8888"
 
 db:
   host: "127.0.0.1"
