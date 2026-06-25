@@ -57,9 +57,9 @@ db:
 ````
 ## 四、运行命令
 ```bash
-#注意事项如果协议生成错误，确认google/protobuf的位置，修改scripts/proto.sh的/usr/local/include为你的路径
 #安装命令
 #注意事项如果协议生成错误，确认google/protobuf的位置，修改scripts/proto.sh的/usr/local/include为你的路径
+#需要安装proto3
 #sh run.sh install 平台号 服务器号
 例：sh run.sh install 1 1
 
