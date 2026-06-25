@@ -32,8 +32,30 @@ CakeGo/
 └── test_client             # TCP压测客户端、模拟多玩家登录测试
 
 ```
+## 三、环境配置
+环境配置在env目录下的app.yaml
+````yaml
+gate:
+  addr: "0.0.0.0:8888"  #网关端口
 
-## 三、运行命令
+base:
+  platId : 1 #平台id
+  serverId: 1 #服务id
+
+#监控
+monitoring:
+  metricAddr: ":9091"	#开启metric监控的端口
+  pprofAddr: ":6060"	#开启pprof监控的端口
+
+db:
+  host: "127.0.0.1"		#数据库host
+  port: "3306"			#数据库端口
+  user: "root"			#数据库账号
+  pass: "123456"		#数据库密码
+  name: "game_db"		#数据库名
+
+````
+## 四、运行命令
 ```bash
 #注意事项如果协议生成错误，确认google/protobuf的位置，修改scripts/proto.sh的/usr/local/include为你的路径
 #安装命令
@@ -58,30 +80,30 @@ CakeGo/
 例：sh run.sh proto
 
 ```
-## 四、绑定协议路由
-### 1.绑定网关的路由
+# 五、绑定协议路由
+### 1. 绑定网关的路由
 ```go
 irouter.Reg().ConnCmd(协议结构体, 绑定方法)
 //例子
 irouter.Reg().ConnCmd(&pb.HeartbeatC2S{}, r.HeartbeatC2S)
 ```
 
-### 2.绑定角色的路由
+### 2. 绑定角色的路由
 ```go
 irouter.Reg().RoleCmd(协议结构体, 绑定方法)
 //例子
 irouter.Reg().RoleCmd(&pb.HeartbeatC2S{}, r.HeartbeatC2S)
 ```
 
-### 3.绑定场景的路由
+### 3. 绑定场景的路由
 ```go
 irouter.Reg().SceneCmd(协议结构体, 绑定方法)
 //例子
 irouter.Reg().SceneCmd(&pb.MovePosC2S{}, s.MovePosC2S)
 ```
 
-## 五、启动gen server 协程
-### 1.gen server 模板
+## 六、启动gen server 协程
+### 1. gen server 模板
 注意事项：
 	1.文件必须放在internal/game/services目录下
 	2.文件名必须带_service
@@ -145,7 +167,7 @@ func (s *Service) RpcTest(state State, args any) (any, error) {
 var _ rpc.GenService = &Service{}
 
 ```
-### 2.rpcid
+### 2. rpcid
 基于ast静态分析，会筛选出internal/game/services的Service结构体，带有前缀的Rpc方法会自动注册并生成常量id
 
 如：func (s *Service) RpcTest(state State, args any) (any, error)会自动生成常量rpcid.RpcTest
@@ -154,7 +176,7 @@ var _ rpc.GenService = &Service{}
 
 生成的分析文件在internal/gensvc/rpcgen
 
-### 3.服务协程间通信方法
+### 3. 服务协程间通信方法
 ```go
 //启动rpc服务
 testRpc, err := rpc.StartWithCfg("test", s)
@@ -180,10 +202,41 @@ rpc.Send("test", rpcid.RpcTest, "hello world")
 rpc.AfterSend(3*time.Second, "test", rpcid.RpcTest, "hello world")
 ```
 
-### 4.服务协程内部的定时器
+### 4. 服务协程内部的定时器
 ```go
 func (s *Service) registerTimer() {
     s.AddTimer(定时器名唯一, 执行间隔, 执行次数（-1是循环）, 执行方法, 执行参数)
     s.AddTimer("TimerSaveRoleDB", 5*time.Second, -1, s.TimerSaveRoleDB, nil)
 }
+```
+
+### 5. State结构体数据安全
+State结构体实现Copy和Restore方法，在每次处理消息时，gensvc会自动执行Copy方法记录下要数据，当消息返回错误执行Restore方法
+
+```go
+type GenState interface {
+	Copy() any
+	Restore(any)
+}
+
+// 例子：
+type State struct {
+	*model.Role
+}
+
+// 在处理消息前深度复制数据
+func (s *State) Copy() any {
+	return s.Role.CloneRolePO()
+}
+
+// 失败后调用接口数据恢复
+func (s *State) Restore(rawData any) {
+	rolePO, ok := rawData.(*model.RolePO)
+	if !ok {
+		return
+	}
+	s.Role.RolePO = rolePO
+}
+
+var _ rpc.GenState = new(State)
 ```
