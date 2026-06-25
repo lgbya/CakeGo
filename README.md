@@ -104,8 +104,8 @@ irouter.Reg().SceneCmd(&pb.MovePosC2S{}, s.MovePosC2S)
 
 ## 六、启动gen server 协程
 ### 1. gen server 模板
-注意事项：
-	1.文件必须放在internal/game/services目录下
+注意事项：\
+	1.文件必须放在internal/game/services目录下 \
 	2.文件名必须带_service
 ```go
 package testsvc
@@ -167,10 +167,12 @@ func (s *Service) RpcTest(state State, args any) (any, error) {
 var _ rpc.GenService = &Service{}
 
 ```
-### 2. rpcid
-基于ast静态分析，会筛选出internal/game/services的Service结构体，带有前缀的Rpc方法会自动注册并生成常量id
-
-如：func (s *Service) RpcTest(state State, args any) (any, error)会自动生成常量rpcid.RpcTest
+### 2. ast静态分析
+基于ast静态分析，会筛选出internal/game/services的Service结构体, 带有前缀的Rpc方法会自动注册并生成常量id,会自动生成常量rpcid.RpcXXX
+```go
+//会生成常量 const RpcTest = "RpcTest"
+func (s *Service) RpcTest(state State, args any) (any, error)
+```
 
 通过id发送到chan，在协程内部调用对应的方法
 
