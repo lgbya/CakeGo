@@ -36,6 +36,7 @@ type Cfg struct {
 	SendFn       func(*Msg) error
 	Wg           *sync.WaitGroup
 	SendMaxCap   int
+	IsCopy       bool
 }
 
 func NewCfg() Cfg {

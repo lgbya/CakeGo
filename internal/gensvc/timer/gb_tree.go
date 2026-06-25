@@ -94,9 +94,14 @@ func (tt *GbTree) Tick(s IGenService) {
 
 	// 执行回调
 
+	copyData, ok := s.Copy()
 	if err := t.fn(s.State(), t.args); err != nil {
+		if ok {
+			s.Restore(copyData)
+		}
 		return
 	}
+
 	t.runTimes++
 
 	// 判断是否继续

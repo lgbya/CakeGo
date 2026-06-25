@@ -43,7 +43,7 @@ func (m *manager) StartRole(roleState *model.Role) (*rpc.Service, error) {
 
 		if oldRoleSvc.IsClosed() {
 			// 角色服务已关闭，复用，更新玩家状态
-			oldRoleSvc.Service.UpdateState(roleState)
+			oldRoleSvc.Service.UpdateState(State{Role: roleState})
 			retSvc = oldRoleSvc.Service
 			retErr = nil
 			// 保留key，不删除

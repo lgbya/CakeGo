@@ -27,6 +27,11 @@ type GenService interface {
 	Stop(any)
 }
 
+type GenState interface {
+	Copy() any
+	Restore(any)
+}
+
 type Service struct {
 	id         uint64
 	name       string
@@ -188,9 +193,14 @@ func (s *Service) run(fn func(*Msg) error, msg *Msg, isInternal bool) {
 	cmd := msg.Cmd
 
 	var err error
-
 	s.before(msg)
+
+	copyData, ok := s.Copy()
 	err = fn(msg)
+	if ok {
+		s.Restore(copyData)
+	}
+
 	s.after(msg)
 
 	costMs := float64(time.Since(start).Milliseconds())
@@ -212,6 +222,22 @@ func (s *Service) before(msg *Msg) {
 }
 
 func (s *Service) after(msg *Msg) {
+}
+
+func (s *Service) Copy() (any, bool) {
+	genState, ok := s.State().(GenState)
+	if ok {
+		copyData := genState.Copy()
+		return copyData, true
+	}
+	return nil, false
+}
+
+func (s *Service) Restore(data any) {
+	genState, ok := s.State().(GenState)
+	if ok {
+		genState.Restore(data)
+	}
 }
 
 func (s *Service) handleInfo(msg *Msg) error {
@@ -262,7 +288,6 @@ func (s *Service) handleCall(msg *Msg) error {
 
 	// 2. 执行业务函数
 	result, err := fn(s.genService, s.state, funArgs)
-
 	// 回写前再次校验：防止执行业务期间调用超时
 	select {
 	case <-msg.CallCtx.Done():

@@ -57,21 +57,7 @@ func (s *Service) Stop(rawState any) {
 	logger.Debugf("[%d]角色进程正在关闭", s.RoleID)
 }
 
-//========================= rpc 方法
-//todo 玩家数据怎么保证每次修改都能事务化，并且性能高，还要再想想
-//func (rs *Service) RpcRoleCmd(rawRole any, args any) (any, error) {
-//	roleState := rawRole.(*model.Role)
-//	cmd := args.(irouter.RoleCmd)
-//	copyRoleDB := roleState.CloneRoleDB()
-//	//返回错误直接回滚数据
-//	if copyRoleDB != nil {
-//		if errx := cmd.RoleFn(roleState, cmd.Msg); errx != nil {
-//			roleState.RolePO = copyRoleDB
-//		}
-//	}
-//	return nil, nil
-//}
-
+// ========================= rpc 方法
 func (s *Service) RpcRoleCmd(state *State, args any) (any, error) {
 	cmd := args.(irouter.RoleCmd)
 	_ = cmd.RoleFn(state.Role, cmd.Msg)

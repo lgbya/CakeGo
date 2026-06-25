@@ -70,6 +70,10 @@ func (r *RolePO) TableName() string {
 	return "role"
 }
 
+func (r *RolePO) CloneRolePO() *RolePO {
+	return deepcopy.Copy(r).(*RolePO)
+}
+
 func (r *Role) Save() {
 	r.isSave = true
 }
@@ -79,10 +83,6 @@ func (r *Role) RestSave() {
 
 func (r *Role) IsSave() bool {
 	return r.isSave
-}
-
-func (r *Role) CloneRoleDB() *RolePO {
-	return deepcopy.Copy(r).(*RolePO)
 }
 
 func (r *Role) Location() Location {

@@ -13,6 +13,8 @@ type IGenService interface {
 	PID() uint64
 	Name() string
 	State() any
+	Copy() (any, bool)
+	Restore(any)
 }
 
 type timer struct {
