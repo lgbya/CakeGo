@@ -1,5 +1,5 @@
 # CakeGo 游戏服务框架
-## 模仿erlang的gen server实现进程单游戏服Actor 模型的mmo游戏框架
+## 借鉴erlang的gen server实现进程单游戏服Actor 模型的mmo游戏框架
 
 ## 一、项目简介
 基于 Golang 协程实现轻量 Actor 模型，借鉴 Erlang 网游成熟进程架构，网关+玩家+场景多Actor隔离。
