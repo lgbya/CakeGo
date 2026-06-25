@@ -28,7 +28,7 @@ type GenService interface {
 }
 
 type GenState interface {
-	Copy() any
+	Copy(string) (any, bool)
 	Restore(any)
 }
 
@@ -195,7 +195,7 @@ func (s *Service) run(fn func(*Msg) error, msg *Msg, isInternal bool) {
 	var err error
 	s.before(msg)
 
-	copyData, ok := s.Copy()
+	copyData, ok := s.Copy(msg.Cmd)
 	err = fn(msg)
 	if ok {
 		s.Restore(copyData)
@@ -224,13 +224,21 @@ func (s *Service) before(msg *Msg) {
 func (s *Service) after(msg *Msg) {
 }
 
-func (s *Service) Copy() (any, bool) {
+func (s *Service) Copy(cmd string) (any, bool) {
 	genState, ok := s.State().(GenState)
-	if ok {
-		copyData := genState.Copy()
-		return copyData, true
+	if !ok {
+		return nil, false
 	}
-	return nil, false
+	copyData, isCopy := genState.Copy(cmd)
+	if !isCopy || copyData == nil {
+		return nil, false
+	}
+
+	if _, ok := copyData.(error); ok {
+		return nil, false
+	}
+
+	return copyData, true
 }
 
 func (s *Service) Restore(data any) {

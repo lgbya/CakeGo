@@ -13,7 +13,7 @@ type IGenService interface {
 	PID() uint64
 	Name() string
 	State() any
-	Copy() (any, bool)
+	Copy(string) (any, bool)
 	Restore(any)
 }
 
