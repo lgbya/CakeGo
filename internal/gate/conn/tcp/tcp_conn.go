@@ -8,23 +8,32 @@ import (
 	"time"
 )
 
-type TcpConn struct {
+type Conn struct {
 	conn     net.Conn
 	writeBuf *bufio.Writer
+	buf      []byte
 }
 
-func NewTcpConn(conn net.Conn) *TcpConn {
-	return &TcpConn{
+func NewTcpConn(conn net.Conn) *Conn {
+	return &Conn{
+		buf:      make([]byte, 1024),
 		conn:     conn,
 		writeBuf: bufio.NewWriterSize(conn, 4096),
 	}
 }
 
-func (c *TcpConn) Read(b []byte) (int, error) {
-	return c.conn.Read(b)
+func (c *Conn) Read() ([]byte, error) {
+	n, err := c.conn.Read(c.buf)
+	if err != nil {
+		return nil, err
+	}
+	// 复制数据，防止 buf 被复用污染
+	data := make([]byte, n)
+	copy(data, c.buf[:n])
+	return data, nil
 }
 
-func (c *TcpConn) Send(buf []byte) {
+func (c *Conn) Send(buf []byte) {
 	defer sys.Recover("SendPacket")
 	err := c.conn.SetWriteDeadline(time.Now().Add(3 * time.Second))
 	if err != nil {
@@ -44,7 +53,7 @@ func (c *TcpConn) Send(buf []byte) {
 	}
 }
 
-func (c *TcpConn) Close(id uint32) error {
+func (c *Conn) Close(id uint32) error {
 	err := c.conn.Close()
 	if err != nil {
 		logger.Errorf("[%d]关闭网络错误：%v", id, err)

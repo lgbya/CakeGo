@@ -80,6 +80,7 @@ func (l *logic) EnterScene(roleMod *model.Role, sceneID uint32, isLogin bool) er
 	//在进入新场景
 	sceneRole := model.NewSceneRole(roleMod)
 	rawLocation, err := sceneRpc.CallTimeout(rpcid.RpcEnterScene, sceneRole, 10*time.Second)
+
 	if err != nil {
 		return err
 	}

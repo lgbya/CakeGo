@@ -87,7 +87,7 @@ func (s *Service) RpcEnterScene(state *State, rawSceneRole any) (any, error) {
 	}
 	if _, ok := state.sceneRoles[sceneRole.RoleID]; ok {
 		logger.Debugf("当前在scene进程 %v", sceneRole)
-		return nil, nil
+		return sceneRole.Location, nil
 	}
 
 	if sceneRole.MapID != s.MapID {
@@ -126,7 +126,7 @@ func (s *Service) RpcEnterScene(state *State, rawSceneRole any) (any, error) {
 	sceneRole.Conn.SendMsg(&pb.RoleViewListS2C{
 		Type:       def.RoleViewTypeAll,
 		SceneId:    s.ID,
-		MapId:      uint32(s.MapID),
+		MapId:      s.MapID,
 		SceneRoles: msgSceneRoles,
 	})
 	s.BcastRpc.Send5s(rpcid.RpcAddConnRole, sceneRole)

@@ -47,7 +47,10 @@ func (s *Service) Init(rpcSvc *rpc.Service, rawRole any) (any, error) {
 }
 
 func (s *Service) Stop(rawState any) {
-	state := rawState.(*State)
+	state, ok := rawState.(*State)
+	if !ok {
+		logger.Errorf("记录数据库错误 %v", rawState)
+	}
 	HandleLogout(state.Role)
 	err := rolepo.Repo().UpdateRole(state.RolePO)
 	if err != nil {

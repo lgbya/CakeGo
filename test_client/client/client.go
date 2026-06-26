@@ -62,29 +62,7 @@ func (c *Client) start() {
 	c.conn = conn
 	c.AccountAuthC2S()
 	c.readLoop(conn)
-	// 读取控制台输入
-	//scanner := bufio.NewScanner(os.Stdin)
-	//for {
-	//	fmt.Print("请输入消息：")
-	//	if !scanner.Scan() {
-	//		return
-	//	}
-	//	//c.inputHandle(conn, scanner)
-	//}
 }
-
-//func (c *Client) inputHandle(conn net.Conn, scanner *bufio.Scanner) {
-//	input := scanner.Text()
-//	code, errx := strconv.ParseUint(input, 10, 32)
-//	if errx != nil {
-//		fmt.Println("输入非法，请输入纯数字协议号！")
-//		return
-//	}
-//
-//	if c.send(conn, uint32(code)) == false {
-//		return
-//	}
-//}
 
 func (c *Client) send(msg proto.Message) bool {
 	code, _, _ := pb.GetC2SCmdByMsg(msg)

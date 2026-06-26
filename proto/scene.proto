@@ -7,15 +7,27 @@ option go_package = "proto/pb;pb";
 // 包名
 package scene;
 
+
+//客户登录时获取当前场景信息
+message LoginEnterC2S{
+  option (common.cmd_id) = 2000; // 协议
+}
+
+message LoginEnterS2C{
+  option (common.cmd_id) = 2000; // 协议
+  common.notice common_notice = 1;
+}
+
+
 //进入场景 优先scene_id，如果scene_id为0 转大场景map_id
 message EnterSceneC2S{
-  option (common.cmd_id) = 2000; // 协议
+  option (common.cmd_id) = 2001; // 协议
   uint32 scene_id = 1; //场景id
   uint32 map_id = 2; //地图id
 }
 
 message EnterSceneS2C{
-  option (common.cmd_id) = 2000; // 协议
+  option (common.cmd_id) = 2001; // 协议
   common.notice common_notice = 1;
   uint32 scene_id = 2; //场景id
   uint32 map_id = 3; //地图id
@@ -24,12 +36,12 @@ message EnterSceneS2C{
 
 //移动
 message MovePosC2S{
-  option (common.cmd_id) = 2001; // 协议
+  option (common.cmd_id) = 2002; // 协议
   common.pos pos = 3;
 }
 
 message MovePosS2C{
-  option (common.cmd_id) = 2001; // 协议
+  option (common.cmd_id) = 2002; // 协议
   uint64 role_id = 1; //角色id
   uint32 map_id = 2; //地图id
   common.pos pos = 3;
@@ -37,7 +49,7 @@ message MovePosS2C{
 
 //角色视野列表
 message RoleViewListS2C{
-  option (common.cmd_id) = 2002; // 协议
+  option (common.cmd_id) = 2003; // 协议
   uint32 type = 1; //1:完整列表 2:新增列表
   uint32 scene_id = 2; //地图id
   uint32 map_id = 3; //地图id
@@ -46,6 +58,6 @@ message RoleViewListS2C{
 
 //角色视野删除
 message RoleViewDelS2C{
-  option (common.cmd_id) = 2003; // 协议
+  option (common.cmd_id) = 2004; // 协议
   uint64 role_id = 1; //
 }

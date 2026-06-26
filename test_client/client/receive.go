@@ -54,6 +54,7 @@ func (c *Client) LoginRoleS2C(cmd uint32, rawMsg proto.Message) {
 	}
 	logger.Debugf("玩家[%s][%d]登录角色成功：%v", c.Account, c.RoleID, msg)
 	go c.HeartbeatC2S()
+	c.LoginEnterC2S()
 }
 
 func (c *Client) EnterSceneS2C(cmd uint32, rawMsg proto.Message) {
@@ -67,7 +68,9 @@ func (c *Client) EnterSceneS2C(cmd uint32, rawMsg proto.Message) {
 		if cnt.Load()%2 == 0 {
 			//随机进入另一张地图
 			c.EnterSceneC2S(0, 1001)
+			return
 		}
+		c.StartAutoWalk()
 	} else {
 		c.StartAutoWalk()
 		//c.MovePosC2S(msg.Pos.X+10, msg.Pos.Y+10)

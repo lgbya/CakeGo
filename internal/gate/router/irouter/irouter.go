@@ -27,7 +27,7 @@ type IRegister interface {
 	ConnCmd(proto.Message, ConnRouteFn)
 	RoleCmd(proto.Message, RoleRouteFn)
 	SceneCmd(proto.Message, SceneRouteFn)
-	Dispatch(any, []byte)
+	Dispatch(any, any)
 }
 
 var (

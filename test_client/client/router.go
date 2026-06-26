@@ -17,6 +17,7 @@ func (c *Client) regCbFn() {
 		{&pb.CreateRoleS2C{}, c.CreateRoleS2C},     //3没有角色就创建角色
 		{&pb.LoginRoleS2C{}, c.LoginRoleS2C},       //4有角色就登陆
 		{&pb.HeartbeatS2C{}, c.HeartbeatS2C},       //5登陆成功发心跳包
+		{&pb.LoginEnterS2C{}, nil},                 //登录发送
 		{&pb.EnterSceneS2C{}, c.EnterSceneS2C},     //7进入场景成功
 		{&pb.RoleViewListS2C{}, c.RoleViewListS2C}, //8获取九宫格视野
 		{&pb.MovePosS2C{}, c.MovePosS2C},           //9移动

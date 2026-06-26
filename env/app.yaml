@@ -9,7 +9,7 @@ base:
 
 log:
   path: "./tmp/logs/"
-  level: "info"
+  level: "debug"
   format: "console"
   maxSize: 1024 #单个文件最大多少，单位M
   maxBackups: 10 #最多保留多少个文件

@@ -30,10 +30,6 @@ func newConnManager() *manager {
 	}
 }
 
-func Manager() *manager {
-	return connMgr
-}
-
 func (m *manager) startService(conn IConn) {
 	defer sys.Recover("startService")
 	svcID := m.GenID()
@@ -65,7 +61,7 @@ func (m *manager) stopService(svcID uint32) {
 	// 发关闭信号：唤醒所有阻塞的 select
 	connSvc.cancel()
 
-	if connSvc.RoleRpc == nil && connSvc.RoleID > 0 {
+	if connSvc.RoleRpc == nil || connSvc.RoleID == 0 {
 		return
 	}
 	connSvc.RoleRpc.Send5s(rpcid.RpcConnClose, nil)

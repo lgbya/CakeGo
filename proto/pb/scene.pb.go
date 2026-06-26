@@ -23,6 +23,87 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+//客户登录时获取当前场景信息
+type LoginEnterC2S struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LoginEnterC2S) Reset() {
+	*x = LoginEnterC2S{}
+	mi := &file_proto_scene_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LoginEnterC2S) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LoginEnterC2S) ProtoMessage() {}
+
+func (x *LoginEnterC2S) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LoginEnterC2S.ProtoReflect.Descriptor instead.
+func (*LoginEnterC2S) Descriptor() ([]byte, []int) {
+	return file_proto_scene_proto_rawDescGZIP(), []int{0}
+}
+
+type LoginEnterS2C struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CommonNotice  *Notice                `protobuf:"bytes,1,opt,name=common_notice,json=commonNotice,proto3" json:"common_notice,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LoginEnterS2C) Reset() {
+	*x = LoginEnterS2C{}
+	mi := &file_proto_scene_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LoginEnterS2C) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LoginEnterS2C) ProtoMessage() {}
+
+func (x *LoginEnterS2C) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LoginEnterS2C.ProtoReflect.Descriptor instead.
+func (*LoginEnterS2C) Descriptor() ([]byte, []int) {
+	return file_proto_scene_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *LoginEnterS2C) GetCommonNotice() *Notice {
+	if x != nil {
+		return x.CommonNotice
+	}
+	return nil
+}
+
 //进入场景 优先scene_id，如果scene_id为0 转大场景map_id
 type EnterSceneC2S struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -34,7 +115,7 @@ type EnterSceneC2S struct {
 
 func (x *EnterSceneC2S) Reset() {
 	*x = EnterSceneC2S{}
-	mi := &file_proto_scene_proto_msgTypes[0]
+	mi := &file_proto_scene_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -46,7 +127,7 @@ func (x *EnterSceneC2S) String() string {
 func (*EnterSceneC2S) ProtoMessage() {}
 
 func (x *EnterSceneC2S) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_proto_msgTypes[0]
+	mi := &file_proto_scene_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -59,7 +140,7 @@ func (x *EnterSceneC2S) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnterSceneC2S.ProtoReflect.Descriptor instead.
 func (*EnterSceneC2S) Descriptor() ([]byte, []int) {
-	return file_proto_scene_proto_rawDescGZIP(), []int{0}
+	return file_proto_scene_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *EnterSceneC2S) GetSceneId() uint32 {
@@ -88,7 +169,7 @@ type EnterSceneS2C struct {
 
 func (x *EnterSceneS2C) Reset() {
 	*x = EnterSceneS2C{}
-	mi := &file_proto_scene_proto_msgTypes[1]
+	mi := &file_proto_scene_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -100,7 +181,7 @@ func (x *EnterSceneS2C) String() string {
 func (*EnterSceneS2C) ProtoMessage() {}
 
 func (x *EnterSceneS2C) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_proto_msgTypes[1]
+	mi := &file_proto_scene_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -113,7 +194,7 @@ func (x *EnterSceneS2C) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnterSceneS2C.ProtoReflect.Descriptor instead.
 func (*EnterSceneS2C) Descriptor() ([]byte, []int) {
-	return file_proto_scene_proto_rawDescGZIP(), []int{1}
+	return file_proto_scene_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *EnterSceneS2C) GetCommonNotice() *Notice {
@@ -154,7 +235,7 @@ type MovePosC2S struct {
 
 func (x *MovePosC2S) Reset() {
 	*x = MovePosC2S{}
-	mi := &file_proto_scene_proto_msgTypes[2]
+	mi := &file_proto_scene_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -166,7 +247,7 @@ func (x *MovePosC2S) String() string {
 func (*MovePosC2S) ProtoMessage() {}
 
 func (x *MovePosC2S) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_proto_msgTypes[2]
+	mi := &file_proto_scene_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -179,7 +260,7 @@ func (x *MovePosC2S) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MovePosC2S.ProtoReflect.Descriptor instead.
 func (*MovePosC2S) Descriptor() ([]byte, []int) {
-	return file_proto_scene_proto_rawDescGZIP(), []int{2}
+	return file_proto_scene_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *MovePosC2S) GetPos() *Pos {
@@ -200,7 +281,7 @@ type MovePosS2C struct {
 
 func (x *MovePosS2C) Reset() {
 	*x = MovePosS2C{}
-	mi := &file_proto_scene_proto_msgTypes[3]
+	mi := &file_proto_scene_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -212,7 +293,7 @@ func (x *MovePosS2C) String() string {
 func (*MovePosS2C) ProtoMessage() {}
 
 func (x *MovePosS2C) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_proto_msgTypes[3]
+	mi := &file_proto_scene_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -225,7 +306,7 @@ func (x *MovePosS2C) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MovePosS2C.ProtoReflect.Descriptor instead.
 func (*MovePosS2C) Descriptor() ([]byte, []int) {
-	return file_proto_scene_proto_rawDescGZIP(), []int{3}
+	return file_proto_scene_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *MovePosS2C) GetRoleId() uint64 {
@@ -262,7 +343,7 @@ type RoleViewListS2C struct {
 
 func (x *RoleViewListS2C) Reset() {
 	*x = RoleViewListS2C{}
-	mi := &file_proto_scene_proto_msgTypes[4]
+	mi := &file_proto_scene_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -274,7 +355,7 @@ func (x *RoleViewListS2C) String() string {
 func (*RoleViewListS2C) ProtoMessage() {}
 
 func (x *RoleViewListS2C) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_proto_msgTypes[4]
+	mi := &file_proto_scene_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -287,7 +368,7 @@ func (x *RoleViewListS2C) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RoleViewListS2C.ProtoReflect.Descriptor instead.
 func (*RoleViewListS2C) Descriptor() ([]byte, []int) {
-	return file_proto_scene_proto_rawDescGZIP(), []int{4}
+	return file_proto_scene_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *RoleViewListS2C) GetType() uint32 {
@@ -328,7 +409,7 @@ type RoleViewDelS2C struct {
 
 func (x *RoleViewDelS2C) Reset() {
 	*x = RoleViewDelS2C{}
-	mi := &file_proto_scene_proto_msgTypes[5]
+	mi := &file_proto_scene_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -340,7 +421,7 @@ func (x *RoleViewDelS2C) String() string {
 func (*RoleViewDelS2C) ProtoMessage() {}
 
 func (x *RoleViewDelS2C) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_proto_msgTypes[5]
+	mi := &file_proto_scene_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -353,7 +434,7 @@ func (x *RoleViewDelS2C) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RoleViewDelS2C.ProtoReflect.Descriptor instead.
 func (*RoleViewDelS2C) Descriptor() ([]byte, []int) {
-	return file_proto_scene_proto_rawDescGZIP(), []int{5}
+	return file_proto_scene_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *RoleViewDelS2C) GetRoleId() uint64 {
@@ -367,31 +448,34 @@ var File_proto_scene_proto protoreflect.FileDescriptor
 
 const file_proto_scene_proto_rawDesc = "" +
 	"\n" +
-	"\x11proto/scene.proto\x12\x05scene\x1a\x12proto/common.proto\"H\n" +
+	"\x11proto/scene.proto\x12\x05scene\x1a\x12proto/common.proto\"\x16\n" +
+	"\rLoginEnterC2S:\x05\x88\xb5\x18\xd0\x0f\"K\n" +
+	"\rLoginEnterS2C\x123\n" +
+	"\rcommon_notice\x18\x01 \x01(\v2\x0e.common.noticeR\fcommonNotice:\x05\x88\xb5\x18\xd0\x0f\"H\n" +
 	"\rEnterSceneC2S\x12\x19\n" +
 	"\bscene_id\x18\x01 \x01(\rR\asceneId\x12\x15\n" +
-	"\x06map_id\x18\x02 \x01(\rR\x05mapId:\x05\x88\xb5\x18\xd0\x0f\"\x9c\x01\n" +
+	"\x06map_id\x18\x02 \x01(\rR\x05mapId:\x05\x88\xb5\x18\xd1\x0f\"\x9c\x01\n" +
 	"\rEnterSceneS2C\x123\n" +
 	"\rcommon_notice\x18\x01 \x01(\v2\x0e.common.noticeR\fcommonNotice\x12\x19\n" +
 	"\bscene_id\x18\x02 \x01(\rR\asceneId\x12\x15\n" +
 	"\x06map_id\x18\x03 \x01(\rR\x05mapId\x12\x1d\n" +
-	"\x03pos\x18\x04 \x01(\v2\v.common.posR\x03pos:\x05\x88\xb5\x18\xd0\x0f\"2\n" +
+	"\x03pos\x18\x04 \x01(\v2\v.common.posR\x03pos:\x05\x88\xb5\x18\xd1\x0f\"2\n" +
 	"\n" +
 	"MovePosC2S\x12\x1d\n" +
-	"\x03pos\x18\x03 \x01(\v2\v.common.posR\x03pos:\x05\x88\xb5\x18\xd1\x0f\"b\n" +
+	"\x03pos\x18\x03 \x01(\v2\v.common.posR\x03pos:\x05\x88\xb5\x18\xd2\x0f\"b\n" +
 	"\n" +
 	"MovePosS2C\x12\x17\n" +
 	"\arole_id\x18\x01 \x01(\x04R\x06roleId\x12\x15\n" +
 	"\x06map_id\x18\x02 \x01(\rR\x05mapId\x12\x1d\n" +
-	"\x03pos\x18\x03 \x01(\v2\v.common.posR\x03pos:\x05\x88\xb5\x18\xd1\x0f\"\x93\x01\n" +
+	"\x03pos\x18\x03 \x01(\v2\v.common.posR\x03pos:\x05\x88\xb5\x18\xd2\x0f\"\x93\x01\n" +
 	"\x0fRoleViewListS2C\x12\x12\n" +
 	"\x04type\x18\x01 \x01(\rR\x04type\x12\x19\n" +
 	"\bscene_id\x18\x02 \x01(\rR\asceneId\x12\x15\n" +
 	"\x06map_id\x18\x03 \x01(\rR\x05mapId\x123\n" +
 	"\vscene_roles\x18\x04 \x03(\v2\x12.common.scene_roleR\n" +
-	"sceneRoles:\x05\x88\xb5\x18\xd2\x0f\"0\n" +
+	"sceneRoles:\x05\x88\xb5\x18\xd3\x0f\"0\n" +
 	"\x0eRoleViewDelS2C\x12\x17\n" +
-	"\arole_id\x18\x01 \x01(\x04R\x06roleId:\x05\x88\xb5\x18\xd3\x0fB\rZ\vproto/pb;pbP\x00b\x06proto3"
+	"\arole_id\x18\x01 \x01(\x04R\x06roleId:\x05\x88\xb5\x18\xd4\x0fB\rZ\vproto/pb;pbP\x00b\x06proto3"
 
 var (
 	file_proto_scene_proto_rawDescOnce sync.Once
@@ -405,29 +489,32 @@ func file_proto_scene_proto_rawDescGZIP() []byte {
 	return file_proto_scene_proto_rawDescData
 }
 
-var file_proto_scene_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_proto_scene_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_proto_scene_proto_goTypes = []any{
-	(*EnterSceneC2S)(nil),   // 0: scene.EnterSceneC2S
-	(*EnterSceneS2C)(nil),   // 1: scene.EnterSceneS2C
-	(*MovePosC2S)(nil),      // 2: scene.MovePosC2S
-	(*MovePosS2C)(nil),      // 3: scene.MovePosS2C
-	(*RoleViewListS2C)(nil), // 4: scene.RoleViewListS2C
-	(*RoleViewDelS2C)(nil),  // 5: scene.RoleViewDelS2C
-	(*Notice)(nil),          // 6: common.notice
-	(*Pos)(nil),             // 7: common.pos
-	(*SceneRole)(nil),       // 8: common.scene_role
+	(*LoginEnterC2S)(nil),   // 0: scene.LoginEnterC2S
+	(*LoginEnterS2C)(nil),   // 1: scene.LoginEnterS2C
+	(*EnterSceneC2S)(nil),   // 2: scene.EnterSceneC2S
+	(*EnterSceneS2C)(nil),   // 3: scene.EnterSceneS2C
+	(*MovePosC2S)(nil),      // 4: scene.MovePosC2S
+	(*MovePosS2C)(nil),      // 5: scene.MovePosS2C
+	(*RoleViewListS2C)(nil), // 6: scene.RoleViewListS2C
+	(*RoleViewDelS2C)(nil),  // 7: scene.RoleViewDelS2C
+	(*Notice)(nil),          // 8: common.notice
+	(*Pos)(nil),             // 9: common.pos
+	(*SceneRole)(nil),       // 10: common.scene_role
 }
 var file_proto_scene_proto_depIdxs = []int32{
-	6, // 0: scene.EnterSceneS2C.common_notice:type_name -> common.notice
-	7, // 1: scene.EnterSceneS2C.pos:type_name -> common.pos
-	7, // 2: scene.MovePosC2S.pos:type_name -> common.pos
-	7, // 3: scene.MovePosS2C.pos:type_name -> common.pos
-	8, // 4: scene.RoleViewListS2C.scene_roles:type_name -> common.scene_role
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	8,  // 0: scene.LoginEnterS2C.common_notice:type_name -> common.notice
+	8,  // 1: scene.EnterSceneS2C.common_notice:type_name -> common.notice
+	9,  // 2: scene.EnterSceneS2C.pos:type_name -> common.pos
+	9,  // 3: scene.MovePosC2S.pos:type_name -> common.pos
+	9,  // 4: scene.MovePosS2C.pos:type_name -> common.pos
+	10, // 5: scene.RoleViewListS2C.scene_roles:type_name -> common.scene_role
+	6,  // [6:6] is the sub-list for method output_type
+	6,  // [6:6] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_proto_scene_proto_init() }
@@ -442,7 +529,7 @@ func file_proto_scene_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_scene_proto_rawDesc), len(file_proto_scene_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

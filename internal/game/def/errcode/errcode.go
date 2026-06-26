@@ -27,10 +27,11 @@ const (
 )
 
 const (
-	SceneRoleIDIllegal  uint32 = 2001 //角色ID非法
-	SceneLocationFail   uint32 = 2002 //获取角色场景定位失败
-	SceneAlreadyIn      uint32 = 2003 //已经在场景里了
-	SceneLeaveFail      uint32 = 2004 //退出场景失败
-	SceneNonExistent    uint32 = 2004 //场景不存在
-	SceneMapNonExistent uint32 = 2005 //大地图不存在
+	SceneLoginFail      uint32 = 2001 //登录场景失败
+	SceneRoleIDIllegal  uint32 = 2002 //角色ID非法
+	SceneLocationFail   uint32 = 2003 //获取角色场景定位失败
+	SceneAlreadyIn      uint32 = 2004 //已经在场景里了
+	SceneLeaveFail      uint32 = 2005 //退出场景失败
+	SceneNonExistent    uint32 = 2006 //场景不存在
+	SceneMapNonExistent uint32 = 2007 //大地图不存在
 )

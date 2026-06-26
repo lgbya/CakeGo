@@ -2,6 +2,8 @@ package ws
 
 import (
 	"cake/internal/gate/packet"
+	"cake/internal/pkg/logger"
+	"cake/internal/util/sys"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
@@ -17,14 +19,31 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+type Conn struct {
+	conn *websocket.Conn
+}
+
+func (c *Conn) Read(b []byte) (int, error) {
+	return c.conn.ReadMessage()
+}
+
+func (c *Conn) Send(buf []byte) {
+	defer sys.Recover("SendPacket")
+
+}
+
+func (c *Conn) Close(id uint32) error {
+	err := c.conn.Close()
+	if err != nil {
+		logger.Errorf("[%d]关闭网络错误：%v", id, err)
+		return err
+	}
+	return nil
+}
+
 func wsHandler(w http.ResponseWriter, r *http.Request) {
 	// 兜底捕获panic，单个客户端异常不会让整个服务崩溃
-	defer func() {
-		if err := recover(); err != nil {
-			log.Printf("ws连接panic已捕获: %v", err)
-		}
-	}()
-
+	defer sys.Recover("wsHandler")
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("握手失败:", err)
@@ -33,6 +52,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	log.Println("客户端连接成功")
+
 	var buf []byte // 粘包缓冲区
 	for {
 		msgType, data, err := conn.ReadMessage()
@@ -58,13 +78,5 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			buf = left
 			// 这里执行protobuf解析、业务路由
 		}
-	}
-}
-func Init() {
-	http.HandleFunc("/ws", wsHandler)
-	log.Println("ws服务启动 :8080")
-	_ = http.ListenAndServe("0.0.0.0:8888", nil)
-	for {
-
 	}
 }

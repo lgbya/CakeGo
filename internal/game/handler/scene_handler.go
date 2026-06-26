@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"cake/internal/game/def/errcode"
 	"cake/internal/game/logic/role"
 	"cake/internal/game/logic/scene"
 	"cake/internal/game/model"
@@ -16,7 +17,25 @@ type SceneRoute struct {
 
 func (s *SceneRoute) Register() {
 	irouter.Reg().RoleCmd(&pb.EnterSceneC2S{}, s.EnterSceneC2S)
+	irouter.Reg().RoleCmd(&pb.LoginEnterC2S{}, s.LoginEnterC2S)
 	irouter.Reg().SceneCmd(&pb.MovePosC2S{}, s.MovePosC2S)
+}
+
+func (*SceneRoute) LoginEnterC2S(roleMod *model.Role, rawMsg proto.Message) error {
+	_, ok := rawMsg.(*pb.LoginEnterC2S)
+	if !ok {
+		roleMod.SendFail(&pb.LoginEnterC2S{}, errcode.SceneLoginFail)
+		return nil
+	}
+
+	err := role.Logic().LoginEnter(roleMod)
+	if err != nil {
+		roleMod.SendFail(&pb.LoginEnterC2S{}, errx.GetCode(err))
+		return err
+	}
+
+	roleMod.SendSuccess(&pb.LoginEnterC2S{})
+	return nil
 }
 
 func (*SceneRoute) EnterSceneC2S(roleMod *model.Role, rawMsg proto.Message) error {

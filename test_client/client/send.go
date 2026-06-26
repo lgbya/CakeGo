@@ -48,6 +48,10 @@ func (c *Client) MovePosC2S(x, y uint32) {
 	})
 }
 
+func (c *Client) LoginEnterC2S() {
+	c.send(&pb.LoginEnterC2S{})
+}
+
 func (c *Client) EnterSceneC2S(sceneID, mapID uint32) {
 	c.send(&pb.EnterSceneC2S{SceneId: sceneID, MapId: mapID})
 }

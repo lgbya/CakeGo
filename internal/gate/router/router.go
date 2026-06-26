@@ -2,7 +2,6 @@ package router
 
 import (
 	"cake/internal/gate/conn/connsvc"
-	"cake/internal/gate/packet"
 	"cake/internal/gate/router/irouter"
 	"cake/internal/gensvc/rpcgen/rpcid"
 	"cake/internal/pkg/logger"
@@ -11,8 +10,6 @@ import (
 	"google.golang.org/protobuf/proto"
 	"reflect"
 )
-
-const PacketBufMaxLen = 524288
 
 type RoleProtoCmd struct {
 	Msg proto.Message
@@ -63,47 +60,22 @@ func (r *Router) SceneCmd(c2sMsg proto.Message, fn irouter.SceneRouteFn) {
 	r.handlers[cmd] = CmdHandler{cmd: cmd, typ: c2sTyp, sceneFn: fn, handleType: HandlerTypeScene}
 }
 
-func (r *Router) Dispatch(rawConnSvc any, buf []byte) {
+func (r *Router) Dispatch(rawConnSvc, rawPacket any) {
 	defer sys.Recover("router-dispatch")
-
-	if len(buf) >= PacketBufMaxLen {
-		logger.Errorf("dispatch buffer too large")
-		return
-	}
 
 	connSvc, ok := rawConnSvc.(*connsvc.Service)
 	if !ok {
 		return
 	}
 
+	packet, ok := rawPacket.(*connsvc.Packet)
+	if !ok {
+		return
+	}
+	cmd := packet.Cmd
+	data := packet.Data
+
 	connSvc.AddSendCount()
-	var fullBuf []byte
-	if len(connSvc.LeftBuf) > 0 {
-		fullBuf = append(connSvc.LeftBuf, buf...)
-		connSvc.LeftBuf = nil // 临时清空，解析后再赋值
-	} else {
-		fullBuf = buf
-	}
-	// 循环解析：处理缓冲区中所有完整数据包，解决粘包
-	for len(fullBuf) > 0 {
-		cmd, data, left, ok := packet.DecodeMsg(fullBuf)
-		if !ok {
-			// 半包：保存剩余未解析数据，跳出循环等待下次接收
-			connSvc.LeftBuf = left
-			break
-		}
-
-		// 解析成功，清空半包缓存
-		connSvc.LeftBuf = nil
-		// 业务处理当前包
-		r.handlePacket(connSvc, cmd, data)
-
-		// 把剩余未解析的数据作为下一轮待解析缓冲区
-		fullBuf = left
-	}
-}
-
-func (r *Router) handlePacket(connSvc *connsvc.Service, cmd uint32, data []byte) {
 	route, ok := r.handlers[cmd]
 	if !ok {
 		logger.Errorf("没有找到对应的协议号:%d", cmd)
