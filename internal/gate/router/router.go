@@ -1,7 +1,7 @@
 package router
 
 import (
-	"cake/internal/gate/conn"
+	"cake/internal/gate/conn/connsvc"
 	"cake/internal/gate/packet"
 	"cake/internal/gate/router/irouter"
 	"cake/internal/gensvc/rpcgen/rpcid"
@@ -71,7 +71,7 @@ func (r *Router) Dispatch(rawConnSvc any, buf []byte) {
 		return
 	}
 
-	connSvc, ok := rawConnSvc.(*conn.Service)
+	connSvc, ok := rawConnSvc.(*connsvc.Service)
 	if !ok {
 		return
 	}
@@ -103,7 +103,7 @@ func (r *Router) Dispatch(rawConnSvc any, buf []byte) {
 	}
 }
 
-func (r *Router) handlePacket(connSvc *conn.Service, cmd uint32, data []byte) {
+func (r *Router) handlePacket(connSvc *connsvc.Service, cmd uint32, data []byte) {
 	route, ok := r.handlers[cmd]
 	if !ok {
 		logger.Errorf("没有找到对应的协议号:%d", cmd)

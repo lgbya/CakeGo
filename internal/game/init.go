@@ -39,6 +39,7 @@ var stopFn = []func(){
 }
 
 func Init() {
+
 	for _, fn := range initFn {
 		fn()
 	}

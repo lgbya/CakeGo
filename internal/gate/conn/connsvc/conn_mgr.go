@@ -1,4 +1,4 @@
-package conn
+package connsvc
 
 import (
 	"cake/internal/gensvc/rpcgen/rpcid"
@@ -6,7 +6,6 @@ import (
 	"cake/internal/util/sys"
 	"context"
 	"github.com/puzpuzpuz/xsync/v3"
-	"net"
 	"sync"
 	"sync/atomic"
 )
@@ -31,7 +30,11 @@ func newConnManager() *manager {
 	}
 }
 
-func (m *manager) startService(conn net.Conn) {
+func Manager() *manager {
+	return connMgr
+}
+
+func (m *manager) startService(conn IConn) {
 	defer sys.Recover("startService")
 	svcID := m.GenID()
 	connSvc := newConnSvc(conn, svcID, m.cxt)
@@ -45,7 +48,7 @@ func (m *manager) startService(conn net.Conn) {
 	})
 }
 
-func (m *manager) stopConnSvc(svcID uint32) {
+func (m *manager) stopService(svcID uint32) {
 	connSvc, ok := m.connSvcs.LoadAndDelete(svcID)
 	if !ok {
 		return
@@ -53,7 +56,7 @@ func (m *manager) stopConnSvc(svcID uint32) {
 	if connSvc.closed.Swap(true) {
 		return
 	}
-	err := connSvc.conn.Close()
+	err := connSvc.conn.Close(svcID)
 	if err != nil {
 		logger.Errorf("[%d]关闭网络错误：%v", svcID, err)
 		return
@@ -79,6 +82,15 @@ func (m *manager) stop() {
 	m.cancel()
 	m.wg.Wait()
 	logger.Errorf("所有conn service已全部退出")
+}
+
+// ========================
+func StartService(conn IConn) {
+	connMgr.startService(conn)
+}
+
+func StopService(id uint32) {
+	connMgr.stopService(id)
 }
 
 func StopManager() {

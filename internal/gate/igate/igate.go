@@ -13,7 +13,6 @@ type ConnSvc interface {
 	GetAccount() string         //设置账号
 	AddRecvCount()              //接收的次数+1
 	AddSendCount()              //发送的次数+1
-	SendPacket([]byte)          //发送数据包
 	SendMsg(proto.Message)
 	SendSuccess(proto.Message)
 	SendFail(proto.Message, uint32)

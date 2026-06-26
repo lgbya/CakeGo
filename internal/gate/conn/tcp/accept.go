@@ -1,6 +1,7 @@
-package conn
+package tcp
 
 import (
+	"cake/internal/gate/conn/connsvc"
 	"cake/internal/pkg/logger"
 	"cake/internal/util/sys"
 	"context"
@@ -54,7 +55,8 @@ func (a *accept) loop(ln net.Listener) {
 					continue
 				}
 				//fmt.Println("新客户端接入:", conn.RemoteAddr())
-				connMgr.startService(conn)
+				tpcConn := NewTcpConn(conn)
+				connsvc.StartService(tpcConn)
 			}
 		})
 	}
@@ -69,12 +71,4 @@ func (a *accept) stop() {
 	}
 	a.wg.Wait()
 	logger.Errorf("所有Accept工作协程已全部退出")
-}
-
-func Loop(ln net.Listener) {
-	acceptInst.loop(ln)
-}
-
-func StopAccept() {
-	acceptInst.stop()
 }

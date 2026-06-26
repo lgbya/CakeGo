@@ -1,30 +1,15 @@
 package gate
 
 import (
-	"cake/env"
-	"cake/internal/gate/conn"
-	"cake/internal/pkg/logger"
-	"cake/internal/util/sys"
-	"net"
+	"cake/internal/gate/conn/connsvc"
+	"cake/internal/gate/conn/tcp"
 )
 
 func Init() {
-	sys.SafeGo(func() {
-		// 监听 TCP 端口
-		addr := env.GetString("gate.addr")
-		listener, err := net.Listen("tcp", addr)
-		if err != nil {
-			panic(err)
-		}
-		defer listener.Close()
-
-		logger.Infof("Success	TCP 服务已启动 %s", addr)
-		// 循环接收客户端连接
-		conn.Loop(listener)
-	})
+	tcp.Init()
 }
 
 func Stop() {
-	conn.StopAccept()
-	conn.StopManager()
+	tcp.Stop()
+	connsvc.StopManager()
 }
