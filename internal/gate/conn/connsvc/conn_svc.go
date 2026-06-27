@@ -186,6 +186,7 @@ func (s *Service) SendMsg(msg proto.Message) {
 	}
 	s.conn.Send(data)
 	s.AddSendCount()
+	logger.SendProto(s.account, s.RoleID, data)
 }
 
 func (s *Service) SetAuthData(authData map[string]any) {

@@ -31,7 +31,11 @@ func newConnManager() *manager {
 }
 
 func (m *manager) startService(conn IConn) {
-	defer sys.Recover("startService")
+	defer func() {
+		if err := recover(); err != nil {
+			conn.Close(0)
+		}
+	}()
 	svcID := m.GenID()
 	connSvc := newConnSvc(conn, svcID, m.cxt)
 	m.connSvcs.Store(svcID, connSvc)

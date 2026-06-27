@@ -1,12 +1,18 @@
 package ws
 
 import (
+	"cake/env"
 	"cake/internal/pkg/logger"
 	"net/http"
 )
 
 func Init() {
 	http.HandleFunc("/ws", wsHandler)
-	logger.Infof("ws服务启动 :8080")
-	_ = http.ListenAndServe("0.0.0.0:8888", nil)
+	addr := env.GetString("gate.websocketAddr")
+	if addr == "" {
+		logger.Infof("ws服务未启动")
+		return
+	}
+	logger.Infof("ws服务启动 :%s", addr)
+	_ = http.ListenAndServe(addr, nil)
 }

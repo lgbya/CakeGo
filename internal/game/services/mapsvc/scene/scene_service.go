@@ -86,7 +86,7 @@ func (s *Service) RpcEnterScene(state *State, rawSceneRole any) (any, error) {
 		return nil, errx.New(errcode.SceneRoleIDIllegal)
 	}
 	if _, ok := state.sceneRoles[sceneRole.RoleID]; ok {
-		logger.Debugf("当前在scene进程 %v", sceneRole)
+		logger.Debugf("当前在scene进程 %+v", sceneRole)
 		return sceneRole.Location, nil
 	}
 
@@ -192,7 +192,7 @@ func (s *Service) RpcSyncRoleStates(state *State, rawBattleRoles any) (any, erro
 		case model.BattleSyncTypeMove:
 			s.BcastNineGridMsg(sceneRole, &pb.MovePosS2C{
 				RoleId: sceneRole.RoleID,
-				MapId:  uint32(s.MapID),
+				MapId:  s.MapID,
 				Pos:    sceneRole.Pos.Pb(),
 			})
 		default:

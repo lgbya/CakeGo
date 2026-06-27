@@ -14,7 +14,7 @@ type Conn struct {
 	buf      []byte
 }
 
-func NewTcpConn(conn net.Conn) *Conn {
+func NewConn(conn net.Conn) *Conn {
 	return &Conn{
 		buf:      make([]byte, 1024),
 		conn:     conn,

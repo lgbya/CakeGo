@@ -81,6 +81,18 @@ func (s *Service) RpcSaveSceneRole(state *State, rawSceneRole any) (any, error) 
 }
 
 // 网关进程关会发一条消息到这里
+func (s *Service) RpcUpdateConn(state *State, rawConn any) (any, error) {
+	conn, ok := rawConn.(*model.Conn)
+	if !ok {
+		return nil, errx.New(errcode.LoginReconnectionFailed)
+	}
+	logger.Debugf("角色重新连接%d", state.RoleID)
+
+	state.Conn = conn
+	return nil, nil
+}
+
+// 网关进程关会发一条消息到这里
 func (s *Service) RpcConnClose(state *State, _ any) (any, error) {
 	state.Conn.CloseConn()
 	s.AddTimer("TimerStopRole", 10*time.Second, 1, s.TimerStopRole, nil)

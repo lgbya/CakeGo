@@ -1,7 +1,8 @@
 env: "app"
 
 gate:
-  addr: "0.0.0.0:8888"
+  tcpAddr: "0.0.0.0:8888" #tpc地址
+  websocketAddr: "0.0.0.0:8889" #websocket地址
 
 base:
   platId : 1

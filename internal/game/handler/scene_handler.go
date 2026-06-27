@@ -34,7 +34,7 @@ func (*SceneRoute) LoginEnterC2S(roleMod *model.Role, rawMsg proto.Message) erro
 		return err
 	}
 
-	roleMod.SendSuccess(&pb.LoginEnterC2S{})
+	roleMod.SendSuccess(&pb.LoginEnterS2C{})
 	return nil
 }
 

@@ -86,6 +86,7 @@ func (l *logic) EnterScene(roleMod *model.Role, sceneID uint32, isLogin bool) er
 	}
 
 	location, ok := rawLocation.(model.Location)
+
 	if !ok {
 		return errx.New(errcode.SceneLocationFail)
 	}

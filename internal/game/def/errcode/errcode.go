@@ -18,12 +18,14 @@ const (
 	LoginRoleNameExists uint32 = 1006 //角色名已存在
 	LoginRoleNameEmpty  uint32 = 1006 //角色名为空
 
-	LoginGenderNotExists uint32 = 1007 //不存在该性别
-	LoginCareerNotExists uint32 = 1008 //不存在该职业
-	LoginInvalidRoleID   uint32 = 1009 //角色id不对
-	LoginRoleNotExists   uint32 = 1010 //角色不存在
-	LoginRoleWorkerFail  uint32 = 1011 //角色协程创建失败
-	LoginRepeat          uint32 = 1012 //角色重复登录
+	LoginGenderNotExists    uint32 = 1007 //不存在该性别
+	LoginCareerNotExists    uint32 = 1008 //不存在该职业
+	LoginInvalidRoleID      uint32 = 1009 //角色id不对
+	LoginRoleNotExists      uint32 = 1010 //角色不存在
+	LoginRoleWorkerFail     uint32 = 1011 //角色协程创建失败
+	LoginRepeat             uint32 = 1012 //角色重复登录
+	LoginReconnectionFailed uint32 = 1013 //角色重新连接失败
+
 )
 
 const (

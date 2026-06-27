@@ -55,7 +55,7 @@ func (a *accept) loop(ln net.Listener) {
 					continue
 				}
 				//fmt.Println("新客户端接入:", conn.RemoteAddr())
-				tpcConn := NewTcpConn(conn)
+				tpcConn := NewConn(conn)
 				connsvc.StartService(tpcConn)
 			}
 		})

@@ -3,7 +3,7 @@ package main
 import (
 	"cake/env"
 	"cake/internal/pkg/logger"
-	"cake/test_client/client"
+	"cake/test/tcpclient/client"
 )
 
 func main() {

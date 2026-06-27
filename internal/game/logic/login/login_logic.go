@@ -62,8 +62,8 @@ func (ll *logic) SelectRoles(connSvc igate.ConnSvc, selectRolesC2S *pb.SelectRol
 		connSvc.SendFail(&pb.SelectRolesS2C{}, errcode.LoginSelectRoles)
 		return
 	}
-	var roleList []*pb.RoleInfo
-	for _, roleState := range roles {
+	roleList := make([]*pb.RoleInfo, len(roles))
+	for k, roleState := range roles {
 		roleInfo := &pb.RoleInfo{
 			RoleId:   roleState.RoleID,
 			ServerId: roleState.ServerID,
@@ -73,9 +73,8 @@ func (ll *logic) SelectRoles(connSvc igate.ConnSvc, selectRolesC2S *pb.SelectRol
 			Gender:   uint32(roleState.Gender),
 			Career:   uint32(roleState.Career),
 		}
-		roleList = append(roleList, roleInfo)
+		roleList[k] = roleInfo
 	}
-
 	selectRolesS2C := &pb.SelectRolesS2C{
 		RoleList: roleList,
 	}

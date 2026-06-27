@@ -1,9 +1,11 @@
 package role
 
 import (
-	"cake/env"
+	"cake/internal/game/def"
 	"cake/internal/game/model"
 	"cake/internal/pkg/db"
+	"cake/internal/pkg/logger"
+	"cake/internal/util/uuid"
 	"errors"
 	"sync"
 	"sync/atomic"
@@ -71,6 +73,7 @@ func (r *repo) UpdateRole(role *model.RolePO) error {
 	if role.RoleID <= 0 {
 		return errors.New("invalid role_id")
 	}
+	logger.Debugf("更新角色 %d", role.RoleID)
 	return db.DbInst().Model(&model.RolePO{}).Where("role_id = ?", role.RoleID).
 		Select("account", "server_id", "plat_id", "name", "gender", "career", "lv", "data").
 		Updates(role).Error
@@ -93,19 +96,14 @@ func (r *repo) CheckRoleNameUnique(name string) (bool, error) {
 
 // 生成唯一角色id
 func (r *repo) GenRoleID() uint64 {
-	serverID := env.ServerID()
-	platID := env.PlatID()
-	id := atomic.AddUint64(&r.nextSeq, 1)
-	platMask := uint64(platID) & 0xFF
-	serverMask := uint64(serverID) & 0xFFFF
-	seqMask := id & 0xFFFFFFFFFF // 40位掩码 2^40-1
-	return platMask<<56 | serverMask<<40 | seqMask
+	return uuid.GenID(def.IDTypeRole, &r.nextSeq)
 }
 
 // 反解唯一角色id
 func (r *repo) ParseRoleID(roleID uint64) (uint64, uint64, uint64) {
-	platID := (roleID >> 56) & 0x7F
-	serverID := (roleID >> 40) & 0xFFFF
-	id := roleID & 0xFFFFFFFFFF
-	return serverID, platID, id
+	typ, s, p, seq := uuid.ParseID(roleID)
+	if typ != def.IDTypeRole {
+		return 0, 0, 0
+	}
+	return s, p, seq
 }

@@ -7,10 +7,17 @@ import (
 	"net"
 )
 
+var isStartTcp bool
+
 func Init() {
+	addr := env.GetString("gate.tcpAddr")
+	if addr == "" {
+		logger.Infof("Success	TCP 服务未启动")
+		return
+	}
 	sys.SafeGo(func() {
+		isStartTcp = true
 		// 监听 TCP 端口
-		addr := env.GetString("gate.addr")
 		listener, err := net.Listen("tcp", addr)
 		if err != nil {
 			panic(err)
@@ -24,5 +31,7 @@ func Init() {
 }
 
 func Stop() {
-	acceptInst.stop()
+	if isStartTcp {
+		acceptInst.stop()
+	}
 }

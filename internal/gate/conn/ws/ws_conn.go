@@ -1,12 +1,14 @@
 package ws
 
 import (
-	"cake/internal/gate/packet"
+	"cake/internal/gate/conn/connsvc"
 	"cake/internal/pkg/logger"
 	"cake/internal/util/sys"
+	"errors"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
+	"time"
 )
 
 // 升级配置
@@ -23,13 +25,21 @@ type Conn struct {
 	conn *websocket.Conn
 }
 
-func (c *Conn) Read(b []byte) (int, error) {
-	return c.conn.ReadMessage()
+func NewConn(conn *websocket.Conn) *Conn {
+	return &Conn{conn: conn}
+}
+
+func (c *Conn) Read() ([]byte, error) {
+	msgType, data, err := c.conn.ReadMessage()
+	if msgType != websocket.BinaryMessage {
+		return nil, errors.New("非BinaryMessage")
+	}
+	return data, err
 }
 
 func (c *Conn) Send(buf []byte) {
 	defer sys.Recover("SendPacket")
-
+	c.conn.WriteMessage(websocket.BinaryMessage, buf)
 }
 
 func (c *Conn) Close(id uint32) error {
@@ -49,34 +59,67 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("握手失败:", err)
 		return
 	}
-	defer conn.Close()
 
-	log.Println("客户端连接成功")
+	// 心跳超时设置
+	conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+	conn.SetPongHandler(func(string) error {
+		conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		return nil
+	})
 
-	var buf []byte // 粘包缓冲区
-	for {
-		msgType, data, err := conn.ReadMessage()
-		if err != nil {
-			// 读取失败立刻跳出循环，终止当前连接
-			log.Printf("连接读取异常，关闭连接: %v", err)
-			break
-		}
-		// 只处理二进制消息，过滤文本、心跳控制帧
-		if msgType != websocket.BinaryMessage {
-			continue
-		}
-
-		// 追加到粘包缓冲区
-		buf = append(buf, data...)
-		// 循环解包处理粘包
-		for {
-			code, body, left, ok := packet.DecodeMsg(buf)
-			if !ok {
-				break
-			}
-			log.Printf("收到数据: %x %d", body, code)
-			buf = left
-			// 这里执行protobuf解析、业务路由
-		}
-	}
+	//fmt.Println("新客户端接入:", conn.RemoteAddr())
+	wsConn := NewConn(conn)
+	connsvc.StartService(wsConn)
 }
+
+//func wsHandler(w http.ResponseWriter, r *http.Request) {
+//	defer func() {
+//		if err := recover(); err != nil {
+//			log.Printf("捕获ws panic: %v", err)
+//		}
+//	}()
+//
+//	conn, err := upgrader.Upgrade(w, r, nil)
+//	if err != nil {
+//		log.Println("握手失败:", err)
+//		return
+//	}
+//	defer conn.Close()
+//
+//	// 心跳超时设置
+//	conn.SetReadDeadline(time.Now().Add(30 * time.Second))
+//	conn.SetPongHandler(func(string) error {
+//		conn.SetReadDeadline(time.Now().Add(30 * time.Second))
+//		return nil
+//	})
+//
+//	log.Println("客户端连接成功")
+//	var buffer []byte // 粘包缓冲区
+//
+//	for {
+//		msgType, data, err := conn.ReadMessage()
+//		// 只要出错 OR 消息类型=-1 直接退出循环
+//		if err != nil || msgType == -1 {
+//			log.Printf("连接关闭, msgType:%d, err:%v", msgType, err)
+//			break
+//		}
+//
+//		// 只处理二进制业务消息
+//		switch msgType {
+//		case websocket.BinaryMessage:
+//			buffer = append(buffer, data...)
+//			// 循环解包处理粘包
+//			for {
+//				cmd, body, left, ok := packet.DecodeMsg(buffer)
+//				if !ok {
+//					break
+//				}
+//				log.Printf("收到cmd:%d 包体长度:%d", cmd, len(body))
+//				// 执行protobuf反序列化+业务路由
+//				buffer = left
+//			}
+//		case websocket.TextMessage:
+//			logger.Warn("丢弃非法文本消息")
+//		}
+//	}
+//}

@@ -197,7 +197,7 @@ func (s *Service) run(fn func(*Msg) error, msg *Msg, isInternal bool) {
 
 	copyData, ok := s.Copy(msg.Cmd)
 	err = fn(msg)
-	if ok {
+	if ok && err != nil {
 		s.Restore(copyData)
 	}
 
@@ -259,7 +259,7 @@ func (s *Service) handleInfo(msg *Msg) error {
 
 	if delay <= 0 {
 		_, err := fn(s.genService, s.state, funArgs)
-		if err == nil {
+		if err != nil {
 			s.retryPendingMsg()
 		}
 		return err
