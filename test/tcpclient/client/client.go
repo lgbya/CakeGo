@@ -28,6 +28,7 @@ type Client struct {
 	cbFnMap        map[uint32]CbFn
 	autoWalkTicker *time.Ticker
 	autoWalkStopCh chan struct{}
+	dirs           []struct{ dx, dy int32 }
 }
 
 var wg sync.WaitGroup
@@ -38,7 +39,19 @@ func NewClient(max int) {
 		account := "user" + strconv.Itoa(i)
 		wg.Add(1)
 		sys.SafeGo(func() {
-			client := &Client{Account: account}
+			client := &Client{
+				Account: account,
+				dirs: []struct{ dx, dy int32 }{
+					{0, 1},   // 上
+					{0, -1},  // 下
+					{-1, 0},  // 左
+					{1, 0},   // 右
+					{1, 1},   // 右上
+					{1, -1},  // 右下
+					{-1, 1},  // 左上
+					{-1, -1}, // 左下
+				},
+			}
 			client.regCbFn()
 			client.start()
 		})
@@ -134,6 +147,8 @@ func (c *Client) readLoop(conn net.Conn) {
 	}
 }
 
+// 8个移动方向：上下、左右、四个斜向
+
 func (c *Client) StartAutoWalk() {
 	// 防止重复启动定时器
 	if c.autoWalkTicker != nil {
@@ -153,24 +168,38 @@ func (c *Client) StartAutoWalk() {
 		}()
 
 		mapConf := conf.MapConfs[c.Location.MapID]
+		// 每次固定移动步长
+		const step = int32(10)
+
 		for {
 			select {
 			case <-c.autoWalkStopCh:
 				// 收到停止信号，退出协程
 				return
 			case <-c.autoWalkTicker.C:
-				// 每秒触发：随机生成坐标
+				// 获取当前坐标
+				curX := int32(c.Location.Pos.X)
+				curY := int32(c.Location.Pos.Y)
+
+				// 随机选一个方向
+				dir := c.dirs[rand.Intn(len(c.dirs))]
+				// 目标坐标 = 当前位置 + 方向 * 步长
+				targetX := curX + dir.dx*step
+				targetY := curY + dir.dy*step
+
+				// 地图边界校验，越界则原地不动/重新随机
 				maxX := int32(mapConf.Width - 1)
 				maxY := int32(mapConf.Height - 1)
-				// 在地图范围内随机坐标
-				randomX := rand.Int31n(maxX)
-				randomY := rand.Int31n(maxY)
+				if targetX < 0 || targetX > maxX || targetY < 0 || targetY > maxY {
+					logger.Warnf("玩家[%s]自动行走越界，本次不移动，当前坐标(%d,%d)", c.Account, curX, curY)
+					continue
+				}
 
-				// 发送客户端上报移动协议
-				c.MovePosC2S(uint32(randomX), uint32(randomY))
-				logger.Infof("玩家[%s]自动行走：随机坐标(%d,%d)", c.Account, randomX, randomY)
+				// 发送移动协议
+				c.MovePosC2S(uint32(targetX), uint32(targetY))
+				logger.Infof("玩家[%s]自动行走：方向(dx:%d,dy:%d)，移动步长%d，坐标(%d,%d)",
+					c.Account, dir.dx, dir.dy, step, targetX, targetY)
 			}
 		}
 	}()
-	//logger.Infof("玩家[%s]开启每秒自动随机行走", c.Account)
 }

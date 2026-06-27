@@ -39,7 +39,17 @@ const root = protobuf.Root.fromJSON({
                         x: { type: "int32", id: 1 },
                         y: { type: "int32", id: 2 }
                     }
-                }
+                },
+                // 修正后的场景角色结构体（和后端完全对齐）
+                scene_role: {
+                    fields: {
+                        role_id: { type: "uint64", id: 1 },
+                        server_id: { type: "uint32", id: 2 },
+                        plat_id: { type: "uint32", id: 3 },
+                        role_name: { type: "string", id: 4 },
+                        pos: { type: "pos", id: 5 }
+                    }
+                },
             }
         },
         // 心跳包 1000
@@ -158,6 +168,7 @@ const root = protobuf.Root.fromJSON({
                 pos: { type: "common.pos", id: 3 }
             }
         },
+        // 2002 玩家移动广播
         MovePosS2C: {
             fields: {
                 role_id: { type: "uint64", id: 1 },
@@ -165,6 +176,21 @@ const root = protobuf.Root.fromJSON({
                 pos: { type: "common.pos", id: 3 }
             }
         },
+        // 2003 视野玩家列表
+        RoleViewListS2C: {
+            fields: {
+                type: { type: "uint32", id: 1 },
+                scene_id: { type: "uint32", id: 2 },
+                map_id: { type: "uint32", id: 3 },
+                scene_roles: { type: "common.scene_role", id: 4, repeated: true }
+            }
+        },
+        // 2004 视野移除玩家
+        RoleViewDelS2C: {
+            fields: {
+                role_id: { type: "uint64", id: 1 }
+            }
+        }
     }
 });
 
@@ -184,6 +210,8 @@ const LoginEnterS2C = root.lookupType("LoginEnterS2C");
 const EnterSceneS2C = root.lookupType("EnterSceneS2C");
 const MovePosC2S = root.lookupType("MovePosC2S");
 const MovePosS2C = root.lookupType("MovePosS2C");
+const RoleViewListS2C = root.lookupType("RoleViewListS2C");
+const RoleViewDelS2C = root.lookupType("RoleViewDelS2C");
 // 地图配置表（和服务端配置对齐）
 const MapConfs = {
     1000: {
@@ -219,6 +247,11 @@ const MOVE_STEP = 10; // 每次移动步长10像素
 let moveLoop = null; // 移动循环定时器
 // 全局缓存场景、玩家位置数据
 let currentSceneData = null;
+
+// 场景所有在线玩家：key = 角色ID(字符串防止大数精度丢失)
+const scenePlayerMap = new Map();
+// 保存当前玩家自身role_id，用来区分自己和其他玩家
+let selfRoleId = null;
 
 // 封包工具：8字节大端包头（4CMD + 4长度）
 function encodePacket(protoData, cmd) {
@@ -301,6 +334,12 @@ function initWebSocket() {
                 case 2002:
                     handleMovePosS2C(bodyBuf);
                     break;
+                case 2003:
+                    handleRoleViewListS2C(bodyBuf);
+                    break;
+                case 2004:
+                    handleRoleViewDelS2C(bodyBuf);
+                    break;
                 default:
                     appendLog(`⚠️ 未处理协议号:${cmd}`);
             }
@@ -354,20 +393,22 @@ function renderSceneCanvas() {
     const mapMaxH = conf.Height;
 
     ctx.imageSmoothingEnabled = false;
+    // 清空画布
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // 背景底色
     ctx.fillStyle = "#374151";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 玩家所在瓦片块索引
+    // 玩家所在Block索引
     const playerBlockX = Math.floor(worldX / blockSize);
     const playerBlockY = Math.floor(worldY / blockSize);
-    // 玩家在当前瓦片内的相对坐标
+    // 玩家在当前块内的相对坐标
     const localX = worldX - playerBlockX * blockSize;
     const localY = worldY - playerBlockY * blockSize;
 
-    // 九宫格遍历
-    for (let offsetX = -1; offsetX <= 1; offsetX++) {
-        for (let offsetY = -1; offsetY <= 1; offsetY++) {
+// 1. 渲染5×5大范围瓦片（上下左右各2格，总共25块Block）
+    for (let offsetX = -2; offsetX <= 2; offsetX++) {
+        for (let offsetY = -2; offsetY <= 2; offsetY++) {
             const blockX = playerBlockX + offsetX;
             const blockY = playerBlockY + offsetY;
             const blockStartX = blockX * blockSize;
@@ -375,28 +416,30 @@ function renderSceneCanvas() {
             const blockEndX = blockStartX + blockSize;
             const blockEndY = blockStartY + blockSize;
 
-            // 地图边界过滤
+            // 地图边界过滤，越界不渲染
             if (blockStartX >= mapMaxW || blockStartY >= mapMaxH) continue;
             if (blockEndX <= 0 || blockEndY <= 0) continue;
 
-            // 关键修正：以画布中心减去玩家在瓦片内的相对坐标，实现玩家永远居中
+            // 瓦片画布偏移（玩家永远居中）
             const tileCanvasX = canvas.width / 2 - localX + offsetX * blockSize;
             const tileCanvasY = canvas.height / 2 - localY + offsetY * blockSize;
 
-            // 绘制瓦片背景
+            // 瓦片背景
             ctx.fillStyle = "#374151";
             ctx.fillRect(tileCanvasX, tileCanvasY, blockSize, blockSize);
 
-            // 绘制Cell网格
+            // 绘制Cell小网格
             ctx.strokeStyle = "#4b5563";
             ctx.lineWidth = 1;
             const cellSize = conf.CellSize;
+            // 竖线
             for (let x = 0; x <= blockSize; x += cellSize) {
                 ctx.beginPath();
                 ctx.moveTo(tileCanvasX + x, tileCanvasY);
                 ctx.lineTo(tileCanvasX + x, tileCanvasY + blockSize);
                 ctx.stroke();
             }
+            // 横线
             for (let y = 0; y <= blockSize; y += cellSize) {
                 ctx.beginPath();
                 ctx.moveTo(tileCanvasX, tileCanvasY + y);
@@ -411,26 +454,72 @@ function renderSceneCanvas() {
         }
     }
 
-    // 绘制居中玩家
+// 2. 渲染视野内所有其他玩家
+    const playerSize = 24;
+    scenePlayerMap.forEach(player => {
+        // 跳过自己，单独最后绘制
+        if (player.roleId === selfRoleId) return;
+
+        // 目标玩家所在块
+        const targetBlockX = Math.floor(player.x / blockSize);
+        const targetBlockY = Math.floor(player.y / blockSize);
+        const targetLocalX = player.x - targetBlockX * blockSize;
+        const targetLocalY = player.y - targetBlockY * blockSize;
+
+        // 换算到当前画布坐标
+        const offsetTileX = targetBlockX - playerBlockX;
+        const offsetTileY = targetBlockY - playerBlockY;
+
+        // 5×5视野边界过滤
+        if (Math.abs(offsetTileX) > 2 || Math.abs(offsetTileY) > 2) return;
+
+        const tarCanvasX = canvas.width / 2 - localX + offsetTileX * blockSize + targetLocalX;
+        const tarCanvasY = canvas.height / 2 - localY + offsetTileY * blockSize + targetLocalY;
+
+        // 玩家名称（头顶）
+        ctx.font = "bold 13px Microsoft Yahei";
+        ctx.fillStyle = "#ffffff";
+        ctx.textAlign = "center";
+        ctx.fillText(player.name, tarCanvasX, tarCanvasY - playerSize - 6);
+
+        // 其他玩家：绿色头像区分
+        ctx.beginPath();
+        ctx.fillStyle = "#4ade80";
+        ctx.arc(tarCanvasX, tarCanvasY - playerSize / 2, playerSize / 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#1d4ed8";
+        ctx.fillRect(
+            tarCanvasX - playerSize / 3,
+            tarCanvasY,
+            playerSize * 0.66,
+            playerSize * 0.7
+        );
+    });
+
+    // 3. 渲染自己（固定画布中心，红色角色）
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
-    const playerSize = 24;
 
-    // 角色名称
+    // 自己角色名
     ctx.font = "bold 14px Microsoft Yahei";
     ctx.fillStyle = "#ffffff";
     ctx.textAlign = "center";
     ctx.fillText(currentSelectRole.name, centerX, centerY - playerSize - 6);
 
-    // Q版人物
+    // 自己卡通小人
     ctx.beginPath();
     ctx.fillStyle = "#f87171";
     ctx.arc(centerX, centerY - playerSize / 2, playerSize / 2, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = "#3b82f6";
-    ctx.fillRect(centerX - playerSize / 3, centerY, playerSize * 0.66, playerSize * 0.7);
+    ctx.fillRect(
+        centerX - playerSize / 3,
+        centerY,
+        playerSize * 0.66,
+        playerSize * 0.7
+    );
 
-    appendLog(`✅ 九宫格渲染 | Block(${playerBlockX},${playerBlockY}) 坐标(${worldX},${worldY})`);
+    appendLog(`✅ 九宫格渲染 | 当前Block(${playerBlockX},${playerBlockY}) 玩家坐标(${worldX},${worldY}) | 视野人数:${scenePlayerMap.size}`);
 }
 // 发送心跳包（1000）
 function sendHeartbeat() {
@@ -595,6 +684,7 @@ function handleEnterGameResp(bodyBuf) {
     if (notice.err_code === 0) {
         appendLog(`🎉 角色【${currentSelectRole.name}】成功进入游戏！即将请求场景信息协议2000`);
         sendLoginEnterReq();
+        selfRoleId = String(resp.role_id);
     }
 }
 
@@ -663,11 +753,105 @@ function handleCreateRoleResp(bodyBuf){
     }
 }
 
+// function handleMovePosS2C(bodyBuf) {
+//     const resp = MovePosS2C.decode(bodyBuf);
+//     appendLog(`📡 玩家移动广播 | 角色ID:${resp.role_id} 地图ID:${resp.map_id} 坐标:(${resp.pos.x},${resp.pos.y})`);
+//     // 后续可扩展：判断role_id不是自己，在画布渲染其他玩家
+// }
+
 function handleMovePosS2C(bodyBuf) {
     const resp = MovePosS2C.decode(bodyBuf);
-    appendLog(`📡 玩家移动广播 | 角色ID:${resp.role_id} 地图ID:${resp.map_id} 坐标:(${resp.pos.x},${resp.pos.y})`);
-    // 后续可扩展：判断role_id不是自己，在画布渲染其他玩家
+    const rid = String(resp.role_id);
+    if (scenePlayerMap.has(rid)) {
+        const player = scenePlayerMap.get(rid);
+        // 更新坐标
+        player.x = resp.pos.x;
+        player.y = resp.pos.y;
+        appendLog(`🏃 角色【${player.name}】移动到坐标(${resp.pos.x},${resp.pos.y})`);
+        renderSceneCanvas();
+    }
 }
+
+function handleRoleViewListS2C(bodyBuf) {
+    try {
+        const reader = new protobuf.Reader(bodyBuf);
+        const SceneRoleType = root.lookupType("common.scene_role");
+
+        let type = 0;
+        let scene_id = 0;
+        let map_id = 0;
+        let roleList = [];
+
+        while (reader.pos < reader.len) {
+            const tag = reader.uint32();
+            const fieldNum = tag >>> 3;
+            const wireType = tag & 7;
+
+            switch (fieldNum) {
+                case 1:
+                    // type uint32
+                    type = reader.uint32();
+                    break;
+                case 2:
+                    // scene_id uint32
+                    scene_id = reader.uint32();
+                    break;
+                case 3:
+                    // map_id uint32
+                    map_id = reader.uint32();
+                    break;
+                case 4:
+                    // repeated common.scene_role 嵌套消息
+                    const len = reader.uint32();
+                    const subBuf = reader.buf.slice(reader.pos, reader.pos + len);
+                    reader.pos += len;
+                    const role = SceneRoleType.decode(subBuf);
+                    roleList.push(role);
+                    break;
+                default:
+                    reader.skipType(wireType);
+                    break;
+            }
+        }
+        appendLog(`📋 视野玩家列表推送 | 类型:${type === 1 ? '全量刷新' : '增量新增'} 场景ID:${scene_id} 地图ID:${map_id} 玩家数量:${roleList.length}`);
+
+        if (type === 1) {
+            scenePlayerMap.clear();
+        }
+
+        roleList.forEach(role => {
+            const rid = String(role.role_id);
+            scenePlayerMap.set(rid, {
+                roleId: rid,
+                name: role.role_name,
+                x: role.pos.x,
+                y: role.pos.y
+            });
+            appendLog(`👤 进入视野：角色【${role.role_name}】 ID:${rid} 坐标(${role.pos.x},${role.pos.y})`);
+        });
+
+// 关键保护：场景未初始化直接返回，不执行渲染
+        if (!currentSceneData) {
+            appendLog("⚠️ 场景数据未初始化，跳过渲染");
+            return;
+        }
+        renderSceneCanvas();
+    } catch (err) {
+        appendLog(`❌ 2003   视野玩家包解析异常：${err.message}，数据包长度：${bodyBuf.byteLength}`);
+        console.error("2003手动解析错误", err, bodyBuf);
+    }
+}
+function handleRoleViewDelS2C(bodyBuf) {
+    const resp = RoleViewDelS2C.decode(bodyBuf);
+    const rid = String(resp.role_id);
+    if (scenePlayerMap.has(rid)) {
+        const player = scenePlayerMap.get(rid);
+        scenePlayerMap.delete(rid);
+        appendLog(`👋 离开视野：角色【${player.name}】 ID:${rid}`);
+        renderSceneCanvas();
+    }
+}
+
 // 登录点击事件
 loginBtn.addEventListener('click', async () => {
     loginBtn.disabled = true;
