@@ -3,7 +3,10 @@ let globalLoginData = {};
 let currentSelectRole = null;
 let heartbeatTimer = null; // 心跳定时器
 const HEARTBEAT_INTERVAL = 10000; // 每10秒发送一次心跳
-const WS_URL = "ws://192.168.0.116:8889/ws";
+// const WS_URL = "ws://192.168.0.116:8889/ws";
+const WS_URL = `ws://${window.location.host}/ws`;
+
+
 
 // DOM元素
 const loginPage = document.getElementById('loginPage');

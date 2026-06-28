@@ -29,14 +29,17 @@ CakeGo/
 ├── proto                   # Protobuf协议定义文件
 ├── scripts                 # Shell运维脚本
 ├── sql                     # MySQL建表语句、初始化数据
-└── test_client             # TCP压测客户端、模拟多玩家登录测试
-
+└── test             		# 测试
+	├── tcpclient           # TCP压测客户端、模拟多玩家登录测试
+	└── wsclient 			# websocket测试页面 
+		
 ```
 ## 三、环境配置
 环境配置在env目录下的app.yaml
 ````yaml
 gate:
-  addr: "0.0.0.0:8888"  #网关端口
+  tpcAddr: "0.0.0.0:8888"  #网关端口
+  wsAddr: "0.0.0.0:8889"  #websocket
 
 base:
   platId : 1 #平台id
@@ -55,6 +58,15 @@ db:
   name: "game_db"		#数据库名
 
 ````
+要打开websocket测试页面
+修改index.js
+````js
+//本地可以不用改
+const WS_URL = `ws://${window.location.host}/ws`;
+//服务器非本地修改
+const WS_URL = `ws://自己的ip地址或域名/ws`;
+````
+
 ## 四、运行命令
 ```bash
 #安装命令

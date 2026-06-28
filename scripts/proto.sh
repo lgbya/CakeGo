@@ -1,14 +1,13 @@
 #!/bin/bash
 protoc \
 	-I=. \
-	-I=/usr/local/include \
+	--plugin=protoc-gen-go=/root/go/bin/protoc-gen-go \
 	--go_out=. proto/*.proto \
 
 go build -o ./bin/gen-cmdid cmd/proto/gen-cmdid/main.go
 
 protoc \
   -I=. \
-  -I=/usr/local/include \
   --plugin=protoc-gen-cmdid-gen=./bin/gen-cmdid \
   --cmdid-gen_out=proto/pb \
   proto/*.proto
