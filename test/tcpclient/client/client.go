@@ -34,9 +34,8 @@ type Client struct {
 var wg sync.WaitGroup
 
 func NewClient(max int) {
-	for i := 0; i < max; i++ {
-
-		account := "user" + strconv.Itoa(i)
+	for i := 1; i <= max; i++ {
+		account := "user-" + strconv.Itoa(i)
 		wg.Add(1)
 		sys.SafeGo(func() {
 			client := &Client{
@@ -147,8 +146,6 @@ func (c *Client) readLoop(conn net.Conn) {
 	}
 }
 
-// 8个移动方向：上下、左右、四个斜向
-
 func (c *Client) StartAutoWalk() {
 	// 防止重复启动定时器
 	if c.autoWalkTicker != nil {
@@ -168,37 +165,50 @@ func (c *Client) StartAutoWalk() {
 		}()
 
 		mapConf := conf.MapConfs[c.Location.MapID]
-		// 每次固定移动步长
-		const step = int32(10)
+		// 补全缺失常量定义
+		const step int32 = 10
+		const durationSec = 10
+
+		// 初始随机方向
+		currentDir := c.dirs[rand.Intn(len(c.dirs))]
+		// 当前方向已执行次数（每次1秒）
+		runTimes := 0
 
 		for {
 			select {
 			case <-c.autoWalkStopCh:
-				// 收到停止信号，退出协程
 				return
 			case <-c.autoWalkTicker.C:
-				// 获取当前坐标
-				curX := int32(c.Location.Pos.X)
-				curY := int32(c.Location.Pos.Y)
+				// 每次定时器触发计数+1
+				runTimes++
 
-				// 随机选一个方向
-				dir := c.dirs[rand.Intn(len(c.dirs))]
-				// 目标坐标 = 当前位置 + 方向 * 步长
-				targetX := curX + dir.dx*step
-				targetY := curY + dir.dy*step
-
-				// 地图边界校验，越界则原地不动/重新随机
-				maxX := int32(mapConf.Width - 1)
-				maxY := int32(mapConf.Height - 1)
-				if targetX < 0 || targetX > maxX || targetY < 0 || targetY > maxY {
-					logger.Warnf("玩家[%s]自动行走越界，本次不移动，当前坐标(%d,%d)", c.Account, curX, curY)
-					continue
+				// 累计达到10次 = 10秒，切换方向并重置计数
+				if runTimes >= durationSec {
+					currentDir = c.dirs[rand.Intn(len(c.dirs))]
+					runTimes = 0
+					logger.Infof("【方向切换】玩家[%s]已连续行走%d秒，更换新方向 dx:%d dy:%d",
+						c.Account, durationSec, currentDir.dx, currentDir.dy)
 				}
 
-				// 发送移动协议
+				curX := int32(c.Location.Pos.X)
+				curY := int32(c.Location.Pos.Y)
+				targetX := curX + currentDir.dx*step
+				targetY := curY + currentDir.dy*step
+
+				maxX := int32(mapConf.Width - 1)
+				maxY := int32(mapConf.Height - 1)
+
+				// 越界循环随机方向直到在合法范围内
+				for targetX < 0 || targetX > maxX || targetY < 0 || targetY > maxY {
+					//logger.Warnf("玩家[%s]即将越界，重新随机方向", c.Account)
+					currentDir = c.dirs[rand.Intn(len(c.dirs))]
+					targetX = curX + currentDir.dx*step
+					targetY = curY + currentDir.dy*step
+				}
+
 				c.MovePosC2S(uint32(targetX), uint32(targetY))
-				logger.Infof("玩家[%s]自动行走：方向(dx:%d,dy:%d)，移动步长%d，坐标(%d,%d)",
-					c.Account, dir.dx, dir.dy, step, targetX, targetY)
+				logger.Debugf("玩家[%s]自动行走 方向(dx:%d,dy:%d) 本轮已走%d秒 步长10 坐标(%d,%d)",
+					c.Account, currentDir.dx, currentDir.dy, runTimes, targetX, targetY)
 			}
 		}
 	}()

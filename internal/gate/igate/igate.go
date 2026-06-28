@@ -20,4 +20,5 @@ type ConnSvc interface {
 	GetRoleConn() *model.Conn
 	GetRoleRpc() *rpc.Service
 	GetRoleID() uint64
+	Heartbeat()
 }

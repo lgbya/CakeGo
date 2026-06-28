@@ -2,7 +2,6 @@ package sys
 
 import (
 	"cake/internal/pkg/logger"
-	"log"
 	"runtime/debug"
 	"time"
 )
@@ -15,8 +14,8 @@ type SafeCfg struct {
 // 使用方式：defer panicx.Recover("模块名-玩家10001")
 func Recover(cxt string) {
 	if err := recover(); err != nil {
-		log.Printf("[SAFE RUN PANIC] 上下文: %s | 错误: %v", cxt, err)
-		log.Printf("[STACK TRACE]\n%s", string(debug.Stack()))
+		logger.Errorf("[SAFE RUN PANIC] 上下文: %s | 错误: %v", cxt, err)
+		logger.Errorf("[STACK TRACE]\n%s", string(debug.Stack()))
 	}
 }
 

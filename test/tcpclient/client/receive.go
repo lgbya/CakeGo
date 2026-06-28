@@ -63,32 +63,28 @@ func (c *Client) EnterSceneS2C(cmd uint32, rawMsg proto.Message) {
 	c.Pos = model.Pos{X: int(msg.Pos.X), Y: int(msg.Pos.Y)}
 	c.Location.SceneID = msg.SceneId
 	c.Location.MapID = msg.MapId
-	if msg.MapId == def.MainSceneMapID {
-		cnt.Add(1)
-		if cnt.Load()%2 == 0 {
-			//随机进入另一张地图
-			c.EnterSceneC2S(0, 1001)
-			return
-		}
-		c.StartAutoWalk()
-	} else {
-		c.StartAutoWalk()
-		//c.MovePosC2S(msg.Pos.X+10, msg.Pos.Y+10)
-	}
+	c.StartAutoWalk()
+	//if msg.MapId == def.MainSceneMapID {
+	//	cnt.Add(1)
+	//	if cnt.Load()%2 == 0 {
+	//		//随机进入另一张地图
+	//		c.EnterSceneC2S(0, 1001)
+	//		return
+	//	}
+	//	c.StartAutoWalk()
+	//} else {
+	//	c.StartAutoWalk()
+	//}
 }
 
 func (c *Client) MovePosS2C(cmd uint32, rawMsg proto.Message) {
-	//msg := rawMsg.(*pb.MovePosS2C)
-	//if c.RoleID != msg.RoleId {
-	//	return
-	//}
+	msg := rawMsg.(*pb.MovePosS2C)
+	if c.RoleID != msg.RoleId {
+		return
+	}
 	//logger.Infof("玩家[%s]在场景[%d]移动,原坐标[%d,%d], 新坐标[%d,%d]成功：%v",
 	//	c.Account, msg.MapId, c.Pos.X, c.Pos.Y, msg.Pos.X, msg.Pos.Y, msg)
-	//c.Pos = model.Pos{X: int(msg.Pos.X), Y: int(msg.Pos.Y)}
-	//mapConf := conf.MapConfs[c.Location.MapID]
-	//if mapConf.Width > int(msg.Pos.X+10) && mapConf.Height > int(msg.Pos.Y+10) {
-	//	c.MovePosC2S(msg.Pos.X+10, msg.Pos.Y+10)
-	//}
+	c.Pos = model.Pos{X: int(msg.Pos.X), Y: int(msg.Pos.Y)}
 }
 
 func (c *Client) RoleViewListS2C(cmd uint32, rawMsg proto.Message) {

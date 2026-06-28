@@ -36,7 +36,7 @@ func (s *Service) Stop(_ any) {
 }
 
 // ================rpc方法=========================
-func (s *Service) RpcAddConnRole(state *State, rawSceneRole any) (any, error) {
+func (s *Service) RpcSaveConnRole(state *State, rawSceneRole any) (any, error) {
 	sceneRole := rawSceneRole.(*model.SceneRole)
 	state.connRoles[sceneRole.RoleID] = sceneRole.Conn
 	return nil, nil

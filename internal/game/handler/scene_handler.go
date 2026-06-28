@@ -57,7 +57,7 @@ func (*SceneRoute) EnterSceneC2S(roleMod *model.Role, rawMsg proto.Message) erro
 	}
 
 	location := roleMod.Location()
-	roleMod.SendSuccess(&pb.EnterSceneS2C{MapId: location.MapID, Pos: location.Pos.Pb()})
+	roleMod.SendSuccess(&pb.EnterSceneS2C{SceneId: location.SceneID, MapId: location.MapID, Pos: location.Pos.Pb()})
 	return nil
 }
 

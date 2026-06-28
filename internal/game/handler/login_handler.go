@@ -27,6 +27,7 @@ func (*LoginRoute) HeartbeatC2S(connSvc igate.ConnSvc, rawMsg proto.Message) {
 	if roleRpc != nil && connSvc.GetRoleID() > 0 {
 		roleRpc.Send5s(rpcid.RpcHeartbeat, msg.ClientTime)
 	}
+	connSvc.Heartbeat()
 	connSvc.SendMsg(&pb.HeartbeatS2C{ServerTime: time.Now().Unix(), ClientTime: msg.ClientTime})
 }
 

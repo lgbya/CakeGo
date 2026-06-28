@@ -1,7 +1,6 @@
 package scene
 
 import (
-	"cake/internal/game/def"
 	"cake/internal/game/def/errcode"
 	"cake/internal/game/model"
 	"cake/internal/game/services/mapsvc/battle"
@@ -87,6 +86,8 @@ func (s *Service) RpcEnterScene(state *State, rawSceneRole any) (any, error) {
 	}
 	if _, ok := state.sceneRoles[sceneRole.RoleID]; ok {
 		logger.Debugf("当前在scene进程 %+v", sceneRole)
+		s.sendRoleViewList(state, sceneRole, false)
+		s.BcastRpc.Send5s(rpcid.RpcSaveConnRole, sceneRole)
 		return sceneRole.Location, nil
 	}
 
@@ -98,38 +99,8 @@ func (s *Service) RpcEnterScene(state *State, rawSceneRole any) (any, error) {
 	sceneRole.SceneID = s.sceneID
 	sceneRole.MapID = s.MapID
 	state.sceneRoles[sceneRole.RoleID] = sceneRole
-
-	//获取当前九宫格玩家
-	viewRoleIDs := s.Get9GridViewRoles(sceneRole.GridPos)
-
-	//其他人发新增
-	msg := &pb.RoleViewListS2C{
-		Type:       def.RoleViewTypeAdd,
-		SceneId:    s.ID,
-		MapId:      uint32(s.MapID),
-		SceneRoles: []*pb.SceneRole{sceneRole.Pb()},
-	}
-	msgSceneRoles := make([]*pb.SceneRole, 0, len(viewRoleIDs))
-	for viewRoleID := range viewRoleIDs {
-		viewSceneRole, ok := state.sceneRoles[viewRoleID]
-		if !ok {
-			continue
-		}
-		msgSceneRoles = append(msgSceneRoles, viewSceneRole.Pb())
-		//玩家更新格子才通知其他人
-		if viewRoleID != sceneRole.RoleID && isUpdateGrid {
-			viewSceneRole.Conn.SendMsg(msg)
-		}
-	}
-
-	//玩家自己发全部，
-	sceneRole.Conn.SendMsg(&pb.RoleViewListS2C{
-		Type:       def.RoleViewTypeAll,
-		SceneId:    s.ID,
-		MapId:      s.MapID,
-		SceneRoles: msgSceneRoles,
-	})
-	s.BcastRpc.Send5s(rpcid.RpcAddConnRole, sceneRole)
+	s.sendRoleViewList(state, sceneRole, isUpdateGrid)
+	s.BcastRpc.Send5s(rpcid.RpcSaveConnRole, sceneRole)
 	s.BattleRpc.Send5s(rpcid.RpcAddBattleRole, sceneRole.ToBattle())
 	return sceneRole.Location, nil
 }
@@ -156,7 +127,7 @@ func (s *Service) RpcLeaveScene(state *State, rawRoleID any) (any, error) {
 	isUpdateGrid := s.delRoleGrid(sceneRole)
 
 	//获取当前九宫格玩家
-	viewRoleIDs := s.Get9GridViewRoles(sceneRole.GridPos)
+	viewRoleIDs := s.get9GridViewRoles(sceneRole.GridPos)
 
 	//通知视野里的角色删除玩家
 	msg := &pb.RoleViewDelS2C{
@@ -190,7 +161,7 @@ func (s *Service) RpcSyncRoleStates(state *State, rawBattleRoles any) (any, erro
 		//todo 偷个懒，直接根据类型做简单的广播同步,应该是存多种同步类型
 		switch battleRole.SyncType {
 		case model.BattleSyncTypeMove:
-			s.BcastNineGridMsg(sceneRole, &pb.MovePosS2C{
+			s.bcastNineGridMsg(sceneRole, &pb.MovePosS2C{
 				RoleId: sceneRole.RoleID,
 				MapId:  s.MapID,
 				Pos:    sceneRole.Pos.Pb(),

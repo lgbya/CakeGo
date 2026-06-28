@@ -51,6 +51,10 @@ func (c *Conn) Close(id uint32) error {
 	return nil
 }
 
+func (c *Conn) Heartbeat() {
+	c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+}
+
 func wsHandler(w http.ResponseWriter, r *http.Request) {
 	// 兜底捕获panic，单个客户端异常不会让整个服务崩溃
 	defer sys.Recover("wsHandler")
@@ -61,11 +65,11 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 心跳超时设置
-	conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-	conn.SetPongHandler(func(string) error {
-		conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-		return nil
-	})
+	//conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+	//conn.SetPongHandler(func(string) error {
+	//	conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+	//	return nil
+	//})
 
 	//fmt.Println("新客户端接入:", conn.RemoteAddr())
 	wsConn := NewConn(conn)

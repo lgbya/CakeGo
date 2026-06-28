@@ -218,23 +218,19 @@ const MapConfs = {
         ID: 1000,
         Name: "奥利利特尔城",
         Type: 1,
-        Width: 47000,
-        Height: 32000,
+        Width: 1600,
+        Height: 1600,
         CellSize: 100,
-        BlockSize: 2200,
-        SpawnX: 23533,
-        SpawnY: 32222
+        BlockSize: 200,
     },
     1001: {
         ID: 1001,
         Name: "风花村",
         Type: 1,
-        Width: 47000,
-        Height: 32000,
+        Width: 1600,
+        Height: 1600,
         CellSize: 100,
-        BlockSize: 2200,
-        SpawnX: 23533,
-        SpawnY: 32222
+        BlockSize: 200,
     }
 };
 const keyState = {
@@ -302,7 +298,7 @@ function initWebSocket() {
 
         ws.onmessage = (e) => {
             const allBytes = new Uint8Array(e.data);
-            appendLog(`📩 收到数据包：${bufferToHex(allBytes)}`);
+            // appendLog(`📩 收到数据包：${bufferToHex(allBytes)}`);
 
             const dataView = new DataView(e.data);
             const cmd = dataView.getUint32(0, false);
@@ -392,136 +388,136 @@ function renderSceneCanvas() {
     const mapMaxW = conf.Width;
     const mapMaxH = conf.Height;
 
+    // 整张地图总Block行列数量
+    const totalBlock = mapMaxW / blockSize;
+
     ctx.imageSmoothingEnabled = false;
-    // 清空画布
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    // 背景底色
     ctx.fillStyle = "#374151";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 玩家所在Block索引
+    // 保存画布状态
+    ctx.save();
+    // 左上角缩放，不会偏移消失
+    const scale = 0.7;
+    ctx.scale(scale, scale);
+
+    // 玩家所在的后端逻辑Block索引
     const playerBlockX = Math.floor(worldX / blockSize);
     const playerBlockY = Math.floor(worldY / blockSize);
-    // 玩家在当前块内的相对坐标
+    // 玩家在当前Block内的相对偏移坐标
     const localX = worldX - playerBlockX * blockSize;
     const localY = worldY - playerBlockY * blockSize;
 
-// 1. 渲染5×5大范围瓦片（上下左右各2格，总共25块Block）
-    for (let offsetX = -2; offsetX <= 2; offsetX++) {
-        for (let offsetY = -2; offsetY <= 2; offsetY++) {
-            const blockX = playerBlockX + offsetX;
-            const blockY = playerBlockY + offsetY;
-            const blockStartX = blockX * blockSize;
-            const blockStartY = blockY * blockSize;
-            const blockEndX = blockStartX + blockSize;
-            const blockEndY = blockStartY + blockSize;
+    // 遍历渲染整张地图所有Block（4×4全部格子都展示）
+    for (let blockX = 0; blockX < totalBlock; blockX++) {
+        for (let blockY = 0; blockY < totalBlock; blockY++) {
+            // 当前Block世界起始坐标
+            const blockWorldX = blockX * blockSize;
+            const blockWorldY = blockY * blockSize;
 
-            // 地图边界过滤，越界不渲染
-            if (blockStartX >= mapMaxW || blockStartY >= mapMaxH) continue;
-            if (blockEndX <= 0 || blockEndY <= 0) continue;
+            // 换算为画布坐标：玩家永远居中
+            const canvasX = canvas.width / 2 - localX + (blockX - playerBlockX) * blockSize;
+            const canvasY = canvas.height / 2 - localY + (blockY - playerBlockY) * blockSize;
 
-            // 瓦片画布偏移（玩家永远居中）
-            const tileCanvasX = canvas.width / 2 - localX + offsetX * blockSize;
-            const tileCanvasY = canvas.height / 2 - localY + offsetY * blockSize;
-
-            // 瓦片背景
+            // 填充区块背景
             ctx.fillStyle = "#374151";
-            ctx.fillRect(tileCanvasX, tileCanvasY, blockSize, blockSize);
+            ctx.fillRect(canvasX, canvasY, blockSize, blockSize);
 
-            // 绘制Cell小网格
+            // 绘制100px最小网格格子
             ctx.strokeStyle = "#4b5563";
             ctx.lineWidth = 1;
             const cellSize = conf.CellSize;
-            // 竖线
+            // 竖网格线
             for (let x = 0; x <= blockSize; x += cellSize) {
                 ctx.beginPath();
-                ctx.moveTo(tileCanvasX + x, tileCanvasY);
-                ctx.lineTo(tileCanvasX + x, tileCanvasY + blockSize);
+                ctx.moveTo(canvasX + x, canvasY);
+                ctx.lineTo(canvasX + x, canvasY + blockSize);
                 ctx.stroke();
             }
-            // 横线
+            // 横网格线
             for (let y = 0; y <= blockSize; y += cellSize) {
                 ctx.beginPath();
-                ctx.moveTo(tileCanvasX, tileCanvasY + y);
-                ctx.lineTo(tileCanvasX + blockSize, tileCanvasY + y);
+                ctx.moveTo(canvasX, canvasY + y);
+                ctx.lineTo(canvasX + blockSize, canvasY + y);
                 ctx.stroke();
             }
 
-            // Block蓝色边框
-            ctx.strokeStyle = "#60a5fa";
-            ctx.lineWidth = 2;
-            ctx.strokeRect(tileCanvasX, tileCanvasY, blockSize, blockSize);
+            // 高亮后端广播的3×3九宫格区块
+            const isInAoiGrid = Math.abs(blockX - playerBlockX) <= 1 && Math.abs(blockY - playerBlockY) <= 1;
+            if (isInAoiGrid) {
+                ctx.strokeStyle = "#60a5fa";
+                ctx.lineWidth = 2;
+            } else {
+                ctx.strokeStyle = "#6b7280";
+                ctx.lineWidth = 1;
+            }
+            ctx.strokeRect(canvasX, canvasY, blockSize, blockSize);
         }
     }
 
-// 2. 渲染视野内所有其他玩家
+    // 绘制当前Block中心点（黄色十字调试线）
+    const centerBlockCanvasX = canvas.width / 2 - localX + blockSize / 2;
+    const centerBlockCanvasY = canvas.height / 2 - localY + blockSize / 2;
+    ctx.strokeStyle = "#facc15";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(centerBlockCanvasX - 30, centerBlockCanvasY);
+    ctx.lineTo(centerBlockCanvasX + 30, centerBlockCanvasY);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(centerBlockCanvasX, centerBlockCanvasY - 30);
+    ctx.lineTo(centerBlockCanvasX, centerBlockCanvasY + 30);
+    ctx.stroke();
+
+    // 仅渲染后端AOI 3×3九宫格内的其他玩家
     const playerSize = 24;
     scenePlayerMap.forEach(player => {
-        // 跳过自己，单独最后绘制
         if (player.roleId === selfRoleId) return;
 
-        // 目标玩家所在块
-        const targetBlockX = Math.floor(player.x / blockSize);
-        const targetBlockY = Math.floor(player.y / blockSize);
-        const targetLocalX = player.x - targetBlockX * blockSize;
-        const targetLocalY = player.y - targetBlockY * blockSize;
+        const tarBlockX = Math.floor(player.x / blockSize);
+        const tarBlockY = Math.floor(player.y / blockSize);
+        const tarLocalX = player.x - tarBlockX * blockSize;
+        const tarLocalY = player.y - tarBlockY * blockSize;
 
-        // 换算到当前画布坐标
-        const offsetTileX = targetBlockX - playerBlockX;
-        const offsetTileY = targetBlockY - playerBlockY;
+        const offsetX = tarBlockX - playerBlockX;
+        const offsetY = tarBlockY - playerBlockY;
+        // 超出后端广播九宫格，不渲染
+        if (Math.abs(offsetX) > 1 || Math.abs(offsetY) > 1) return;
 
-        // 5×5视野边界过滤
-        if (Math.abs(offsetTileX) > 2 || Math.abs(offsetTileY) > 2) return;
+        const tarCanvasX = canvas.width / 2 - localX + offsetX * blockSize + tarLocalX;
+        const tarCanvasY = canvas.height / 2 - localY + offsetY * blockSize + tarLocalY;
 
-        const tarCanvasX = canvas.width / 2 - localX + offsetTileX * blockSize + targetLocalX;
-        const tarCanvasY = canvas.height / 2 - localY + offsetTileY * blockSize + targetLocalY;
-
-        // 玩家名称（头顶）
         ctx.font = "bold 13px Microsoft Yahei";
         ctx.fillStyle = "#ffffff";
         ctx.textAlign = "center";
         ctx.fillText(player.name, tarCanvasX, tarCanvasY - playerSize - 6);
 
-        // 其他玩家：绿色头像区分
         ctx.beginPath();
         ctx.fillStyle = "#4ade80";
         ctx.arc(tarCanvasX, tarCanvasY - playerSize / 2, playerSize / 2, 0, Math.PI * 2);
         ctx.fill();
         ctx.fillStyle = "#1d4ed8";
-        ctx.fillRect(
-            tarCanvasX - playerSize / 3,
-            tarCanvasY,
-            playerSize * 0.66,
-            playerSize * 0.7
-        );
+        ctx.fillRect(tarCanvasX - playerSize / 3, tarCanvasY, playerSize * 0.66, playerSize * 0.7);
     });
 
-    // 3. 渲染自己（固定画布中心，红色角色）
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-
-    // 自己角色名
+    // 渲染本地玩家（画布正中心）
+    const canvasCenterX = canvas.width / 2;
+    const canvasCenterY = canvas.height / 2;
     ctx.font = "bold 14px Microsoft Yahei";
     ctx.fillStyle = "#ffffff";
     ctx.textAlign = "center";
-    ctx.fillText(currentSelectRole.name, centerX, centerY - playerSize - 6);
+    ctx.fillText(currentSelectRole.name, canvasCenterX, canvasCenterY - playerSize - 6);
 
-    // 自己卡通小人
     ctx.beginPath();
     ctx.fillStyle = "#f87171";
-    ctx.arc(centerX, centerY - playerSize / 2, playerSize / 2, 0, Math.PI * 2);
+    ctx.arc(canvasCenterX, canvasCenterY - playerSize / 2, playerSize / 2, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = "#3b82f6";
-    ctx.fillRect(
-        centerX - playerSize / 3,
-        centerY,
-        playerSize * 0.66,
-        playerSize * 0.7
-    );
-
-    appendLog(`✅ 九宫格渲染 | 当前Block(${playerBlockX},${playerBlockY}) 玩家坐标(${worldX},${worldY}) | 视野人数:${scenePlayerMap.size}`);
+    ctx.fillRect(canvasCenterX - playerSize / 3, canvasCenterY, playerSize * 0.66, playerSize * 0.7);
+    ctx.restore();
 }
-// 发送心跳包（1000）
+
 function sendHeartbeat() {
     if (!ws || ws.readyState !== WebSocket.OPEN) {
         clearInterval(heartbeatTimer);
@@ -538,7 +534,7 @@ function sendHeartbeat() {
     }
     const msg = HeartbeatC2S.create(reqData);
     const bin = HeartbeatC2S.encode(msg).finish();
-    appendLog(`💓 发送心跳包[1000]，客户端时间戳：${clientTime}`);
+    // appendLog(`💓 发送心跳包[1000]，客户端时间戳：${clientTime}`);
     ws.send(encodePacket(bin, 1000));
 }
 
@@ -767,7 +763,7 @@ function handleMovePosS2C(bodyBuf) {
         // 更新坐标
         player.x = resp.pos.x;
         player.y = resp.pos.y;
-        appendLog(`🏃 角色【${player.name}】移动到坐标(${resp.pos.x},${resp.pos.y})`);
+        // appendLog(`🏃 角色【${player.name}】移动到坐标(${resp.pos.x},${resp.pos.y})`);
         renderSceneCanvas();
     }
 }

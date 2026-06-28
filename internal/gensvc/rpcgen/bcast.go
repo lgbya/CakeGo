@@ -6,19 +6,19 @@ import (
 	"errors"
 )
 var BcastMap = map[string]router.RpcFn{
-	"RpcAddConnRole": Bcast_RpcAddConnRole,
+	"RpcSaveConnRole": Bcast_RpcSaveConnRole,
 	"RpcDelConnRole": Bcast_RpcDelConnRole,
 	"RpcAoiNiceGrid": Bcast_RpcAoiNiceGrid,
 
 }
 
-func Bcast_RpcAddConnRole(rawSvc, rawState, rawArgs any) (any, error) {
+func Bcast_RpcSaveConnRole(rawSvc, rawState, rawArgs any) (any, error) {
 		svc := rawSvc.(*bcast.Service)
 		state,ok := rawState.(*bcast.State)
 		if !ok {
 			return nil, errors.New("invalid state")
 		}
-		res, errx := svc.RpcAddConnRole(state, rawArgs)
+		res, errx := svc.RpcSaveConnRole(state, rawArgs)
 		if errx != nil {
 			return nil, errx
 		}

@@ -1,8 +1,10 @@
 package scene
 
 import (
+	"cake/internal/game/def"
 	"cake/internal/game/model"
 	"cake/internal/gensvc/rpcgen/rpcid"
+	"cake/proto/pb"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -73,16 +75,16 @@ func (s *Service) initNineGirds() map[model.Pos]Cell {
 }
 
 // 向角色所在九宫格广播消息
-func (s *Service) BcastNineGridMsg(sceneRole *model.SceneRole, msg proto.Message) {
+func (s *Service) bcastNineGridMsg(sceneRole *model.SceneRole, msg proto.Message) {
 
 	// 获取九宫格所有接收者
-	viewRoleIDs := s.Get9GridViewRoles(sceneRole.GridPos)
+	viewRoleIDs := s.get9GridViewRoles(sceneRole.GridPos)
 	aoiInfo := model.AoiInfo{RoleIDs: viewRoleIDs, Msg: msg}
 	s.BcastRpc.Send5s(rpcid.RpcAoiNiceGrid, &aoiInfo)
 }
 
 // center 为格子索引坐标，X/Y 是整型格子下标
-func (s *Service) Get9GridViewRoles(center model.Pos) map[uint64]struct{} {
+func (s *Service) get9GridViewRoles(center model.Pos) map[uint64]struct{} {
 	viewSet := make(map[uint64]struct{})
 	// 遍历3*3九宫偏移
 	for dx := -1; dx <= 1; dx++ {
@@ -108,4 +110,37 @@ func (s *Service) Get9GridViewRoles(center model.Pos) map[uint64]struct{} {
 		}
 	}
 	return viewSet
+}
+
+func (s *Service) sendRoleViewList(state *State, sceneRole *model.SceneRole, isUpdateGrid bool) {
+	//获取当前九宫格玩家
+	viewRoleIDs := s.get9GridViewRoles(sceneRole.GridPos)
+
+	//其他人发新增
+	msg := &pb.RoleViewListS2C{
+		Type:       def.RoleViewTypeAdd,
+		SceneId:    s.ID,
+		MapId:      s.MapID,
+		SceneRoles: []*pb.SceneRole{sceneRole.Pb()},
+	}
+	msgSceneRoles := make([]*pb.SceneRole, 0, len(viewRoleIDs))
+	for viewRoleID := range viewRoleIDs {
+		viewSceneRole, ok := state.sceneRoles[viewRoleID]
+		if !ok {
+			continue
+		}
+		msgSceneRoles = append(msgSceneRoles, viewSceneRole.Pb())
+		//玩家更新格子才通知其他人
+		if viewRoleID != sceneRole.RoleID && isUpdateGrid {
+			viewSceneRole.Conn.SendMsg(msg)
+		}
+	}
+
+	//玩家自己发全部，
+	sceneRole.Conn.SendMsg(&pb.RoleViewListS2C{
+		Type:       def.RoleViewTypeAll,
+		SceneId:    s.ID,
+		MapId:      s.MapID,
+		SceneRoles: msgSceneRoles,
+	})
 }

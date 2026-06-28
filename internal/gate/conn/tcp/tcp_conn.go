@@ -61,3 +61,7 @@ func (c *Conn) Close(id uint32) error {
 	}
 	return nil
 }
+
+func (c *Conn) Heartbeat() {
+
+}

@@ -237,4 +237,8 @@ func (s *Service) GetRoleID() uint64 {
 	return s.RoleID
 }
 
+func (s *Service) Heartbeat() {
+	s.conn.Heartbeat()
+}
+
 var _ igate.ConnSvc = new(Service)

@@ -43,11 +43,12 @@ func (*Service) TimerCheckHeartbeat(rawRole any, _ any) error {
 			//连续差不多1分钟心跳超时了，直接踢吧
 			state.CloseConn()
 		}
-		//fmt.Println("无心跳次数", heartbeat.BadCnt)
 	} else {
 		heartbeat.BadCnt = 0
 	}
 	state.Heartbeat = heartbeat
+	logger.Debugf("心跳%+v", state.Heartbeat)
+
 	return nil
 }
 
