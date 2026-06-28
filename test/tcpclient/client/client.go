@@ -18,8 +18,6 @@ import (
 	"time"
 )
 
-var r = rand.New(rand.NewSource(time.Now().UnixNano()))
-
 type Client struct {
 	Account string
 	RoleID  uint64
