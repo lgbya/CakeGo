@@ -748,6 +748,9 @@ function handleCreateRoleResp(bodyBuf){
     if(notice.err_code === 0){
         appendLog(`🎉 角色【${resp.name}】创建成功，自动刷新角色列表`);
         createRoleForm.classList.add('hidden');
+        // 关闭创建面板，恢复上方角色列表与创建按钮
+        roleListBox.classList.remove('hidden');
+        createRoleBtn.classList.remove('hidden');
         sendSelectRoleReq();
     }
 }
@@ -879,16 +882,30 @@ loginBtn.addEventListener('click', async () => {
 // 打开创建角色表单
 createRoleBtn.addEventListener('click',()=>{
     createRoleForm.classList.remove('hidden');
+    // 打开创建面板，隐藏上方角色列表和创建按钮
+    roleListBox.classList.add('hidden');
+    createRoleBtn.classList.add('hidden');
 });
 // 取消创建
 cancelCreateBtn.addEventListener('click',()=>{
     createRoleForm.classList.add('hidden');
+    // 恢复角色列表、创建按钮显示
+    roleListBox.classList.remove('hidden');
+    createRoleBtn.classList.remove('hidden');
+    // 重置表单，清空上次填写内容
+    document.getElementById('roleName').value = '';
+    document.querySelector('input[name="gender"][value="1"]').checked = true;
+    document.getElementById('career').value = '1';
 });
 // 提交创建角色
 submitCreateBtn.addEventListener('click',sendCreateRoleReq);
 
 // 键盘按下
 document.addEventListener('keydown', (e) => {
+    // 不在场景页直接返回，不处理移动
+    if(document.getElementById('scenePage').classList.contains('hidden')){
+        return;
+    }
     const key = e.key.toLowerCase();
     if (['w','a','s','d'].includes(key)) {
         e.preventDefault();
@@ -914,7 +931,10 @@ document.addEventListener('keyup', (e) => {
 });
 
 document.addEventListener('keydown', (e) => {
-    // 方向键映射
+    // 只有场景页面非隐藏时，键盘移动才生效
+    if(document.getElementById('scenePage').classList.contains('hidden')){
+        return;
+    }
     switch(e.key){
         case 'ArrowUp':
             keyState.w = true;
