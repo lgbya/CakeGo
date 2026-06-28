@@ -22,8 +22,8 @@ func (c *Client) SelectRolesC2S() {
 }
 
 func (c *Client) CreateRoleC2S() {
-	gender := Rand(int(consts2.GenderWoman), int(consts2.GenderMan))
-	career := Rand(1, 4)
+	gender := RandomInt(int(consts2.GenderWoman)) + 1
+	career := RandomInt(int(consts2.CareerWarrior)) + 1
 	c.send(&pb.CreateRoleC2S{
 		Name:     "压测玩家" + c.Account,
 		ServerId: env.ServerID(),
