@@ -2,13 +2,31 @@ package client
 
 import (
 	"math/rand"
+	"sync"
 	"time"
 )
 
+var (
+	r    *rand.Rand
+	mux  sync.Mutex
+	once sync.Once
+)
+
 func init() {
-	// 必须给独立随机源设置种子
-	rand.Seed(time.Now().UnixNano())
+	once.Do(func() {
+		r = rand.New(rand.NewSource(time.Now().UnixNano()))
+	})
 }
-func RandomInt(n int) int {
-	return rand.Intn(n)
+
+func Rand(min, max int) int {
+	if min >= max {
+		return min
+	}
+	mux.Lock()
+	defer mux.Unlock()
+	// 如果 r 为 nil，再次初始化（安全）
+	if r == nil {
+		r = rand.New(rand.NewSource(time.Now().UnixNano()))
+	}
+	return r.Intn(max-min+1) + min
 }
