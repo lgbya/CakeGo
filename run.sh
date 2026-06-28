@@ -15,7 +15,7 @@ show_help() {
 CMD="$1"
 
 case "${CMD}" in
-install|start|test)
+install|start|test|stop)
     # install/start 必须携带 2个数字参数，总参数数量=3
     if [ $# -ne 3 ]; then
         echo "错误：指令【${CMD}】需要传入 服ID、平台ID 两个参数"
@@ -35,6 +35,9 @@ install|start|test)
     elif [[ "${CMD}" == "start" ]]; then
         echo "===== 开始执行启动脚本 scripts/start.sh ${PlatID} ${ServerID} ====="
         sh ./scripts/start.sh "${PlatID}" "${ServerID}"
+    elif [[ "${CMD}" == "stop" ]]; then
+        echo "===== 开始执行启动脚本 scripts/start.sh ${PlatID} ${ServerID} ====="
+        sh ./scripts/stop.sh "${PlatID}" "${ServerID}"
     elif [[ "${CMD}" == "test" ]]; then
         echo "===== 启动压测客户端 tester，服务 game_${NUM1}_${NUM2} ====="
         sh ./scripts/test.sh "${PlatID}" "${ServerID}"

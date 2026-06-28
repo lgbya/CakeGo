@@ -6,9 +6,191 @@ const HEARTBEAT_INTERVAL = 10000; // 每10秒发送一次心跳
 // const WS_URL = "ws://192.168.0.116:8889/ws";
 const WS_URL = `ws://${window.location.host}:8889/ws`;
 
+// ===================== 精灵图系统配置 =====================
+const SPRITE_CONFIG = {
+    // ---------- 必填（根据你的图片修改） ----------
+    IMAGE_URL: '战士.png', // 你的精灵图文件名
+    CAREER_IMAGES: {
+        1: '战士.png',    // 职业1 战士
+        2: '法师.png',     // 职业2 法师
+        3: '弓箭手.png',     // 职业2 法师
+        4: '牧师.png',     // 职业2 法师
 
+        // 更多职业可根据需求添加
+    },
+    SPRITE_SIZE: 32,          // 每帧宽高（宽/列数）
+    COLS: 4,                  // 横向帧数（宽/每帧宽）
+    ROWS: 4,                  // 纵向行数（高/每帧高）
+    // ---------- 方向映射（根据实际行顺序调整） ----------
+    DIR_INDEX: {
+        DOWN: 0,   // 第0行朝下
+        LEFT: 1,   // 第1行朝左
+        RIGHT: 2,  // 第2行朝右
+        UP: 3      // 第3行朝上
+    },
+    // ---------- 其他 ----------
+    FRAME_INTERVAL: 150,       // 动画切换间隔(ms)
+    SCALE: 1.5,                // 角色放大倍数
+    ANCHOR_X: 0.5,             // 水平锚点（0~1）
+    ANCHOR_Y: 0.5,             // 垂直锚点（0~1），0.5居中，0.8脚底
+    DEBUG: false,              // 是否显示调试边框和标签
+};
 
-// DOM元素
+// 方向常量（方便引用）
+const Direction = SPRITE_CONFIG.DIR_INDEX;
+
+// ===================== 角色精灵图类 =====================
+class RoleSprite {
+    constructor(imageUrl, color = '#f87171') {
+        this.imageUrl = imageUrl;
+        this.color = color;
+        this.image = new Image();
+        this.image.src = imageUrl;
+        this.imageLoaded = false;
+        this.loadError = false;
+
+        this.currentFrame = 0;                 // 当前动画帧
+        this.direction = Direction.DOWN;      // 当前方向
+        this.isMoving = false;                // 是否移动（控制动画）
+        this.frameTimer = 0;
+        this.lastUpdate = Date.now();
+
+        this.image.onload = () => {
+            this.imageLoaded = true;
+            console.log('✅ 精灵图加载成功:', this.image.width, 'x', this.image.height);
+        };
+        this.image.onerror = () => {
+            this.loadError = true;
+            console.error('❌ 精灵图加载失败，请检查路径:', imageUrl);
+        };
+    }
+    changeImage(newUrl) {
+        if (this.imageUrl === newUrl) return;
+        this.imageUrl = newUrl;
+        this.imageLoaded = false;
+        this.loadError = false;
+        this.image = new Image();
+        this.image.src = newUrl;
+        this.image.onload = () => {
+            this.imageLoaded = true;
+            console.log('✅ 精灵图切换成功:', newUrl);
+        };
+        this.image.onerror = () => {
+            this.loadError = true;
+            console.error('❌ 精灵图切换失败:', newUrl);
+        };
+    }
+    // 设置方向（根据dx, dy）
+    setDirection(dx, dy) {
+        if (dx === 0 && dy === 0) return;
+        const dir = SPRITE_CONFIG.DIR_INDEX;
+        let newDir;
+        if (dy < 0) newDir = dir.UP;
+        else if (dy > 0) newDir = dir.DOWN;
+        else if (dx < 0) newDir = dir.LEFT;
+        else if (dx > 0) newDir = dir.RIGHT;
+        // 安全钳制：确保方向在有效范围内
+        if (newDir !== undefined && newDir >= 0 && newDir < SPRITE_CONFIG.ROWS) {
+            this.direction = newDir;
+        } else {
+            console.warn('无效方向索引，保持当前方向');
+        }
+    }
+
+    // 更新动画帧
+    update() {
+        if (!this.imageLoaded) return;
+        const now = Date.now();
+        const delta = now - this.lastUpdate;
+        this.lastUpdate = now;
+        if (this.isMoving) {
+            this.frameTimer += delta;
+            if (this.frameTimer >= SPRITE_CONFIG.FRAME_INTERVAL) {
+                this.frameTimer = 0;
+                this.currentFrame = (this.currentFrame + 1) % SPRITE_CONFIG.COLS;
+            }
+        } else {
+            this.currentFrame = 0;
+            this.frameTimer = 0;
+        }
+        // 二次安全：确保帧索引不越界
+        if (this.currentFrame >= SPRITE_CONFIG.COLS) this.currentFrame = 0;
+        if (this.direction >= SPRITE_CONFIG.ROWS) this.direction = Direction.DOWN;
+    }
+
+    // 绘制精灵
+    draw(ctx, x, y, scale = 1) {
+        if (!this.imageLoaded || this.loadError) {
+            this.drawPlaceholder(ctx, x, y, scale);
+            return;
+        }
+
+        const size = SPRITE_CONFIG.SPRITE_SIZE * scale;
+        let srcX = this.currentFrame * SPRITE_CONFIG.SPRITE_SIZE;
+        let srcY = this.direction * SPRITE_CONFIG.SPRITE_SIZE;
+
+        // 安全钳制：防止切片越界
+        const maxSrcX = this.image.width - SPRITE_CONFIG.SPRITE_SIZE;
+        const maxSrcY = this.image.height - SPRITE_CONFIG.SPRITE_SIZE;
+        if (srcX > maxSrcX) srcX = maxSrcX;
+        if (srcY > maxSrcY) srcY = maxSrcY;
+        if (srcX < 0) srcX = 0;
+        if (srcY < 0) srcY = 0;
+
+        const anchorX = SPRITE_CONFIG.ANCHOR_X || 0.5;
+        const anchorY = SPRITE_CONFIG.ANCHOR_Y || 0.5;
+        const drawX = x - size * anchorX;
+        const drawY = y - size * anchorY;
+
+        ctx.drawImage(
+            this.image,
+            srcX, srcY,
+            SPRITE_CONFIG.SPRITE_SIZE, SPRITE_CONFIG.SPRITE_SIZE,
+            drawX, drawY,
+            size, size
+        );
+
+        // 调试信息
+        if (SPRITE_CONFIG.DEBUG) {
+            ctx.strokeStyle = 'red';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(drawX, drawY, size, size);
+            ctx.fillStyle = 'white';
+            ctx.font = '14px Arial';
+            ctx.fillText(`D=${this.direction} F=${this.currentFrame}`, x, drawY - 10);
+        }
+    }
+
+    // 占位图形（当图片加载失败时使用）
+    drawPlaceholder(ctx, x, y, scale) {
+        const size = 32 * scale;
+        ctx.fillStyle = '#f87171';
+        ctx.fillRect(x - size/2, y - size/2, size, size);
+        ctx.fillStyle = 'white';
+        ctx.font = '20px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('?', x, y + 8);
+    }
+}
+
+// ===================== 创建精灵实例 =====================
+// 玩家自己的精灵
+const playerSprite = new RoleSprite(SPRITE_CONFIG.IMAGE_URL, '#f87171');
+// 其他玩家的精灵缓存
+const otherPlayerSprites = new Map();
+
+function getOtherPlayerSprite(roleId) {
+    if (otherPlayerSprites.has(roleId)) {
+        return otherPlayerSprites.get(roleId);
+    }
+    const colors = ['#4ade80', '#60a5fa', '#fbbf24', '#a78bfa', '#f472b6', '#34d399', '#fb923c'];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const sprite = new RoleSprite(SPRITE_CONFIG.IMAGE_URL, color);
+    otherPlayerSprites.set(roleId, sprite);
+    return sprite;
+}
+
+// ===================== DOM元素 =====================
 const loginPage = document.getElementById('loginPage');
 const rolePage = document.getElementById('rolePage');
 const roleListBox = document.getElementById('roleListBox');
@@ -26,7 +208,7 @@ function appendLog(text) {
     logBox.scrollTop = logBox.scrollHeight;
 }
 
-// ===================== Protobuf 协议定义（1000心跳、1001~1004、2000场景） =====================
+// ===================== Protobuf 协议定义（完整） =====================
 const root = protobuf.Root.fromJSON({
     nested: {
         common: {
@@ -43,7 +225,6 @@ const root = protobuf.Root.fromJSON({
                         y: { type: "int32", id: 2 }
                     }
                 },
-                // 修正后的场景角色结构体（和后端完全对齐）
                 scene_role: {
                     fields: {
                         role_id: { type: "uint64", id: 1 },
@@ -55,7 +236,6 @@ const root = protobuf.Root.fromJSON({
                 },
             }
         },
-        // 心跳包 1000
         HeartbeatC2S: {
             fields: {
                 client_time: { type: "int64", id: 1 }
@@ -67,7 +247,6 @@ const root = protobuf.Root.fromJSON({
                 server_time: { type: "int64", id: 2 }
             }
         },
-        // 登录 1001
         AccountAuthC2S: {
             fields: {
                 account: { type: "string", id: 1 },
@@ -84,7 +263,6 @@ const root = protobuf.Root.fromJSON({
                 is_auth: { type: "bool", id: 2 }
             }
         },
-        // 拉取角色列表 1002
         SelectRolesC2S: {
             fields: {
                 account: { type: "string", id: 1 },
@@ -98,7 +276,6 @@ const root = protobuf.Root.fromJSON({
                 role_list: { type: "RoleInfo", id: 2, repeated: true }
             }
         },
-        // 角色信息结构体
         RoleInfo: {
             fields: {
                 role_id: { type: "uint64", id: 1 },
@@ -110,29 +287,27 @@ const root = protobuf.Root.fromJSON({
                 career: { type: "uint32", id: 7 }
             }
         },
-        // 创建角色 1003
-        CreateRoleC2S:{
-            fields:{
-                name:{type:"string",id:1},
-                server_id:{type:"uint32",id:2},
-                plat_id:{type:"uint32",id:3},
-                gender:{type:"uint32",id:4},
-                career:{type:"uint32",id:5}
+        CreateRoleC2S: {
+            fields: {
+                name: { type: "string", id: 1 },
+                server_id: { type: "uint32", id: 2 },
+                plat_id: { type: "uint32", id: 3 },
+                gender: { type: "uint32", id: 4 },
+                career: { type: "uint32", id: 5 }
             }
         },
-        CreateRoleS2C:{
-            fields:{
-                common_notice:{type:"common.notice",id:1},
-                role_id:{type:"uint64",id:2},
-                server_id:{type:"uint32",id:3},
-                plat_id:{type:"uint32",id:4},
-                name:{type:"string",id:5},
-                gender:{type:"uint32",id:6},
-                career:{type:"uint32",id:7},
-                lv:{type:"uint32",id:8}
+        CreateRoleS2C: {
+            fields: {
+                common_notice: { type: "common.notice", id: 1 },
+                role_id: { type: "uint64", id: 2 },
+                server_id: { type: "uint32", id: 3 },
+                plat_id: { type: "uint32", id: 4 },
+                name: { type: "string", id: 5 },
+                gender: { type: "uint32", id: 6 },
+                career: { type: "uint32", id: 7 },
+                lv: { type: "uint32", id: 8 }
             }
         },
-        // 选中角色进入游戏 1004
         EnterGameC2S: {
             fields: {
                 role_id: { type: "uint64", id: 1 },
@@ -146,7 +321,6 @@ const root = protobuf.Root.fromJSON({
                 role_id: { type: "uint64", id: 2 }
             }
         },
-        // 登录进入场景 2000
         LoginEnterC2S: {
             fields: {}
         },
@@ -155,8 +329,6 @@ const root = protobuf.Root.fromJSON({
                 common_notice: { type: "common.notice", id: 1 }
             }
         },
-
-        // 进入场景推送 2001
         EnterSceneS2C: {
             fields: {
                 common_notice: { type: "common.notice", id: 1 },
@@ -165,13 +337,11 @@ const root = protobuf.Root.fromJSON({
                 pos: { type: "common.pos", id: 4 }
             }
         },
-        // 玩家移动 2002
         MovePosC2S: {
             fields: {
                 pos: { type: "common.pos", id: 3 }
             }
         },
-        // 2002 玩家移动广播
         MovePosS2C: {
             fields: {
                 role_id: { type: "uint64", id: 1 },
@@ -179,7 +349,6 @@ const root = protobuf.Root.fromJSON({
                 pos: { type: "common.pos", id: 3 }
             }
         },
-        // 2003 视野玩家列表
         RoleViewListS2C: {
             fields: {
                 type: { type: "uint32", id: 1 },
@@ -188,7 +357,6 @@ const root = protobuf.Root.fromJSON({
                 scene_roles: { type: "common.scene_role", id: 4, repeated: true }
             }
         },
-        // 2004 视野移除玩家
         RoleViewDelS2C: {
             fields: {
                 role_id: { type: "uint64", id: 1 }
@@ -215,7 +383,8 @@ const MovePosC2S = root.lookupType("MovePosC2S");
 const MovePosS2C = root.lookupType("MovePosS2C");
 const RoleViewListS2C = root.lookupType("RoleViewListS2C");
 const RoleViewDelS2C = root.lookupType("RoleViewDelS2C");
-// 地图配置表（和服务端配置对齐）
+
+// 地图配置表
 const MapConfs = {
     1000: {
         ID: 1000,
@@ -236,23 +405,16 @@ const MapConfs = {
         BlockSize: 200,
     }
 };
-const keyState = {
-    w: false,
-    a: false,
-    s: false,
-    d: false
-};
-const MOVE_STEP = 10; // 每次移动步长10像素
-let moveLoop = null; // 移动循环定时器
-// 全局缓存场景、玩家位置数据
-let currentSceneData = null;
 
-// 场景所有在线玩家：key = 角色ID(字符串防止大数精度丢失)
+// ===================== 全局状态 =====================
+const keyState = { w: false, a: false, s: false, d: false };
+const MOVE_STEP = 10;
+let moveLoop = null;
+let currentSceneData = null;
 const scenePlayerMap = new Map();
-// 保存当前玩家自身role_id，用来区分自己和其他玩家
 let selfRoleId = null;
 
-// 封包工具：8字节大端包头（4CMD + 4长度）
+// ===================== 封包工具 =====================
 function encodePacket(protoData, cmd) {
     const bodyLen = protoData.length;
     const buffer = new ArrayBuffer(8 + bodyLen);
@@ -263,14 +425,13 @@ function encodePacket(protoData, cmd) {
     return buffer;
 }
 
-// 二进制转十六进制
 function bufferToHex(buf) {
     return Array.from(new Uint8Array(buf))
         .map(b => b.toString(16).padStart(2, "0"))
         .join(" ");
 }
 
-// 初始化WebSocket
+// ===================== WebSocket =====================
 function initWebSocket() {
     return new Promise((resolve, reject) => {
         if (ws && ws.readyState === WebSocket.OPEN) {
@@ -291,7 +452,6 @@ function initWebSocket() {
         ws.onclose = () => {
             appendLog("🔌 服务端连接已关闭");
             loginBtn.disabled = false;
-            // 连接关闭时清理心跳定时器
             if (heartbeatTimer) {
                 clearInterval(heartbeatTimer);
                 heartbeatTimer = null;
@@ -301,52 +461,30 @@ function initWebSocket() {
 
         ws.onmessage = (e) => {
             const allBytes = new Uint8Array(e.data);
-            // appendLog(`📩 收到数据包：${bufferToHex(allBytes)}`);
-
             const dataView = new DataView(e.data);
             const cmd = dataView.getUint32(0, false);
             const bodyLen = dataView.getUint32(4, false);
             const bodyBuf = allBytes.slice(8, 8 + bodyLen);
 
             switch (cmd) {
-                case 1000:
-                    handleHeartbeatResp(bodyBuf);
-                    break;
-                case 1001:
-                    handleLoginResp(bodyBuf);
-                    break;
-                case 1002:
-                    handleRoleListResp(bodyBuf);
-                    break;
-                case 1003:
-                    handleCreateRoleResp(bodyBuf);
-                    break;
-                case 1004:
-                    handleEnterGameResp(bodyBuf);
-                    break;
-                case 2000:
-                    handleLoginEnterResp(bodyBuf);
-                    break;
-                case 2001:
-                    handleEnterSceneResp(bodyBuf);
-                    break;
-                case 2002:
-                    handleMovePosS2C(bodyBuf);
-                    break;
-                case 2003:
-                    handleRoleViewListS2C(bodyBuf);
-                    break;
-                case 2004:
-                    handleRoleViewDelS2C(bodyBuf);
-                    break;
-                default:
-                    appendLog(`⚠️ 未处理协议号:${cmd}`);
+                case 1000: handleHeartbeatResp(bodyBuf); break;
+                case 1001: handleLoginResp(bodyBuf); break;
+                case 1002: handleRoleListResp(bodyBuf); break;
+                case 1003: handleCreateRoleResp(bodyBuf); break;
+                case 1004: handleEnterGameResp(bodyBuf); break;
+                case 2000: handleLoginEnterResp(bodyBuf); break;
+                case 2001: handleEnterSceneResp(bodyBuf); break;
+                case 2002: handleMovePosS2C(bodyBuf); break;
+                case 2003: handleRoleViewListS2C(bodyBuf); break;
+                case 2004: handleRoleViewDelS2C(bodyBuf); break;
+                default: appendLog(`⚠️ 未处理协议号:${cmd}`);
             }
         };
     });
 }
 
-// 处理进入场景推送 2001
+// ===================== 协议处理函数 =====================
+
 function handleEnterSceneResp(bodyBuf) {
     const resp = EnterSceneS2C.decode(bodyBuf);
     const notice = resp.common_notice || { err_code: 0, err_msg: "" };
@@ -357,7 +495,6 @@ function handleEnterSceneResp(bodyBuf) {
         return;
     }
 
-    // 缓存场景数据
     currentSceneData = {
         sceneId: resp.scene_id,
         mapId: resp.map_id,
@@ -366,79 +503,63 @@ function handleEnterSceneResp(bodyBuf) {
         mapConf: MapConfs[resp.map_id]
     };
 
-    // 隐藏登录、选角页，跳转场景页
     loginPage.classList.add("hidden");
     rolePage.classList.add("hidden");
     document.getElementById("scenePage").classList.remove("hidden");
 
-    console.log(resp.map_id)
-    // 填充场景信息
     document.getElementById("sceneTitle").innerText = `当前场景：${currentSceneData.mapConf.Name}`;
-    // document.getElementById("sceneIdText").innerText = currentSceneData.sceneId;
     document.getElementById("mapNameText").innerText = currentSceneData.mapConf.Name;
     document.getElementById("playerPosText").innerText = `(${currentSceneData.playerX}, ${currentSceneData.playerY})`;
 
-    // 绘制场景+玩家
     renderSceneCanvas();
 }
+
+// ===================== 渲染场景（使用精灵图） =====================
 function renderSceneCanvas() {
+    if (!currentSceneData || !currentSceneData.mapConf) {
+        console.warn('场景数据未初始化，跳过渲染');
+        return;
+    }
     const canvas = document.getElementById("sceneCanvas");
     const ctx = canvas.getContext("2d");
     const conf = currentSceneData.mapConf;
     const worldX = currentSceneData.playerX;
     const worldY = currentSceneData.playerY;
     const blockSize = conf.BlockSize;
-    const mapMaxW = conf.Width;
-    const mapMaxH = conf.Height;
-
-    // 整张地图总Block行列数量
-    const totalBlock = mapMaxW / blockSize;
+    const totalBlock = conf.Width / blockSize;
 
     ctx.imageSmoothingEnabled = false;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "#374151";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 保存画布状态
     ctx.save();
-    // 左上角缩放，不会偏移消失
     const scale = 0.7;
     ctx.scale(scale, scale);
 
-    // 玩家所在的后端逻辑Block索引
     const playerBlockX = Math.floor(worldX / blockSize);
     const playerBlockY = Math.floor(worldY / blockSize);
-    // 玩家在当前Block内的相对偏移坐标
     const localX = worldX - playerBlockX * blockSize;
     const localY = worldY - playerBlockY * blockSize;
 
-    // 遍历渲染整张地图所有Block（4×4全部格子都展示）
+    // 绘制地图网格
     for (let blockX = 0; blockX < totalBlock; blockX++) {
         for (let blockY = 0; blockY < totalBlock; blockY++) {
-            // 当前Block世界起始坐标
-            const blockWorldX = blockX * blockSize;
-            const blockWorldY = blockY * blockSize;
-
-            // 换算为画布坐标：玩家永远居中
             const canvasX = canvas.width / 2 - localX + (blockX - playerBlockX) * blockSize;
             const canvasY = canvas.height / 2 - localY + (blockY - playerBlockY) * blockSize;
 
-            // 填充区块背景
             ctx.fillStyle = "#374151";
             ctx.fillRect(canvasX, canvasY, blockSize, blockSize);
 
-            // 绘制100px最小网格格子
             ctx.strokeStyle = "#4b5563";
             ctx.lineWidth = 1;
             const cellSize = conf.CellSize;
-            // 竖网格线
             for (let x = 0; x <= blockSize; x += cellSize) {
                 ctx.beginPath();
                 ctx.moveTo(canvasX + x, canvasY);
                 ctx.lineTo(canvasX + x, canvasY + blockSize);
                 ctx.stroke();
             }
-            // 横网格线
             for (let y = 0; y <= blockSize; y += cellSize) {
                 ctx.beginPath();
                 ctx.moveTo(canvasX, canvasY + y);
@@ -446,20 +567,14 @@ function renderSceneCanvas() {
                 ctx.stroke();
             }
 
-            // 高亮后端广播的3×3九宫格区块
             const isInAoiGrid = Math.abs(blockX - playerBlockX) <= 1 && Math.abs(blockY - playerBlockY) <= 1;
-            if (isInAoiGrid) {
-                ctx.strokeStyle = "#60a5fa";
-                ctx.lineWidth = 2;
-            } else {
-                ctx.strokeStyle = "#6b7280";
-                ctx.lineWidth = 1;
-            }
+            ctx.strokeStyle = isInAoiGrid ? "#60a5fa" : "#6b7280";
+            ctx.lineWidth = isInAoiGrid ? 2 : 1;
             ctx.strokeRect(canvasX, canvasY, blockSize, blockSize);
         }
     }
 
-    // 绘制当前Block中心点（黄色十字调试线）
+    // 中心十字（调试）
     const centerBlockCanvasX = canvas.width / 2 - localX + blockSize / 2;
     const centerBlockCanvasY = canvas.height / 2 - localY + blockSize / 2;
     ctx.strokeStyle = "#facc15";
@@ -473,8 +588,9 @@ function renderSceneCanvas() {
     ctx.lineTo(centerBlockCanvasX, centerBlockCanvasY + 30);
     ctx.stroke();
 
-    // 仅渲染后端AOI 3×3九宫格内的其他玩家
-    const playerSize = 24;
+    const playerSize = SPRITE_CONFIG.SPRITE_SIZE * SPRITE_CONFIG.SCALE;
+
+    // ---- 绘制其他玩家 ----
     scenePlayerMap.forEach(player => {
         if (player.roleId === selfRoleId) return;
 
@@ -482,45 +598,51 @@ function renderSceneCanvas() {
         const tarBlockY = Math.floor(player.y / blockSize);
         const tarLocalX = player.x - tarBlockX * blockSize;
         const tarLocalY = player.y - tarBlockY * blockSize;
-
         const offsetX = tarBlockX - playerBlockX;
         const offsetY = tarBlockY - playerBlockY;
-        // 超出后端广播九宫格，不渲染
         if (Math.abs(offsetX) > 1 || Math.abs(offsetY) > 1) return;
 
         const tarCanvasX = canvas.width / 2 - localX + offsetX * blockSize + tarLocalX;
         const tarCanvasY = canvas.height / 2 - localY + offsetY * blockSize + tarLocalY;
 
+        // 获取或创建精灵
+        let sprite = getOtherPlayerSprite(player.roleId);
+        sprite.update();
+
+        // 绘制名字
         ctx.font = "bold 13px Microsoft Yahei";
         ctx.fillStyle = "#ffffff";
         ctx.textAlign = "center";
+        ctx.shadowColor = "rgba(0,0,0,0.8)";
+        ctx.shadowBlur = 4;
         ctx.fillText(player.name, tarCanvasX, tarCanvasY - playerSize - 6);
+        ctx.shadowBlur = 0;
 
-        ctx.beginPath();
-        ctx.fillStyle = "#4ade80";
-        ctx.arc(tarCanvasX, tarCanvasY - playerSize / 2, playerSize / 2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#1d4ed8";
-        ctx.fillRect(tarCanvasX - playerSize / 3, tarCanvasY, playerSize * 0.66, playerSize * 0.7);
+        // 绘制精灵
+        sprite.draw(ctx, tarCanvasX, tarCanvasY, SPRITE_CONFIG.SCALE);
     });
 
-    // 渲染本地玩家（画布正中心）
+    // ---- 绘制本地玩家 ----
+    playerSprite.update();
     const canvasCenterX = canvas.width / 2;
     const canvasCenterY = canvas.height / 2;
-    ctx.font = "bold 14px Microsoft Yahei";
-    ctx.fillStyle = "#ffffff";
-    ctx.textAlign = "center";
-    ctx.fillText(currentSelectRole.name, canvasCenterX, canvasCenterY - playerSize - 6);
 
-    ctx.beginPath();
-    ctx.fillStyle = "#f87171";
-    ctx.arc(canvasCenterX, canvasCenterY - playerSize / 2, playerSize / 2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#3b82f6";
-    ctx.fillRect(canvasCenterX - playerSize / 3, canvasCenterY, playerSize * 0.66, playerSize * 0.7);
+    // 名字（金色高亮）
+    ctx.font = "bold 14px Microsoft Yahei";
+    ctx.fillStyle = "#fbbf24";
+    ctx.textAlign = "center";
+    ctx.shadowColor = "rgba(251,191,36,0.5)";
+    ctx.shadowBlur = 10;
+    ctx.fillText(currentSelectRole.name, canvasCenterX, canvasCenterY - playerSize - 6);
+    ctx.shadowBlur = 0;
+
+    // 绘制本地玩家精灵
+    playerSprite.draw(ctx, canvasCenterX, canvasCenterY, SPRITE_CONFIG.SCALE);
+
     ctx.restore();
 }
 
+// ===================== 心跳 =====================
 function sendHeartbeat() {
     if (!ws || ws.readyState !== WebSocket.OPEN) {
         clearInterval(heartbeatTimer);
@@ -537,11 +659,9 @@ function sendHeartbeat() {
     }
     const msg = HeartbeatC2S.create(reqData);
     const bin = HeartbeatC2S.encode(msg).finish();
-    // appendLog(`💓 发送心跳包[1000]，客户端时间戳：${clientTime}`);
     ws.send(encodePacket(bin, 1000));
 }
 
-// 处理心跳返回
 function handleHeartbeatResp(bodyBuf) {
     const resp = HeartbeatS2C.decode(bodyBuf);
     const now = Date.now();
@@ -549,7 +669,7 @@ function handleHeartbeatResp(bodyBuf) {
     appendLog(`💚 心跳响应成功 | 客户端时间:${resp.client_time} | 服务端时间:${resp.server_time} | 往返延迟:${rtt}ms`);
 }
 
-// 登录返回处理
+// ===================== 登录/角色列表 =====================
 function handleLoginResp(bodyBuf) {
     const resp = AccountAuthS2C.decode(bodyBuf);
     const notice = resp.common_notice || { err_code: -1, err_msg: "无错误信息" };
@@ -567,7 +687,6 @@ function handleLoginResp(bodyBuf) {
     }
 }
 
-// 请求角色列表
 function sendSelectRoleReq() {
     const reqData = {
         account: globalLoginData.account,
@@ -596,7 +715,6 @@ function handleRoleListResp(bodyBuf) {
             const tag = reader.uint32();
             const fieldNum = tag >>> 3;
             const wireType = tag & 7;
-
             if (fieldNum === 1) {
                 const len = reader.uint32();
                 const sub = reader.buf.slice(reader.pos, reader.pos + len);
@@ -626,11 +744,11 @@ function handleRoleListResp(bodyBuf) {
             const dom = document.createElement("div");
             dom.className = "role-item";
             dom.innerHTML = `
-            <p>角色ID：${role.role_id}</p>
-            <p>角色名：${role.name}</p>
-            <p>等级：${role.lv} | 性别：${genderStr} | 职业：${careerStr}</p>
-            <p>服务器ID：${role.server_id}</p>
-        `;
+                <p>角色ID：${role.role_id}</p>
+                <p>角色名：${role.name}</p>
+                <p>等级：${role.lv} | 性别：${genderStr} | 职业：${careerStr}</p>
+                <p>服务器ID：${role.server_id}</p>
+            `;
             dom.onclick = () => {
                 appendLog(`✅ 选中角色【${role.name}】，发起进入游戏请求(1004)`);
                 currentSelectRole = role;
@@ -657,7 +775,6 @@ function handleRoleListResp(bodyBuf) {
     }
 }
 
-// 发送进入游戏协议 1004
 function sendEnterGameReq(role) {
     const reqData = {
         role_id: role.role_id,
@@ -675,7 +792,6 @@ function sendEnterGameReq(role) {
     ws.send(encodePacket(bin, 1004));
 }
 
-// 进入游戏返回处理
 function handleEnterGameResp(bodyBuf) {
     const resp = EnterGameS2C.decode(bodyBuf);
     const notice = resp.common_notice || { err_code: -1, err_msg: "无错误信息" };
@@ -684,10 +800,17 @@ function handleEnterGameResp(bodyBuf) {
         appendLog(`🎉 角色【${currentSelectRole.name}】成功进入游戏！即将请求场景信息协议2000`);
         sendLoginEnterReq();
         selfRoleId = String(resp.role_id);
+        const career = currentSelectRole.career;
+        const careerImages = SPRITE_CONFIG.CAREER_IMAGES;
+        if (careerImages && careerImages[career]) {
+            const newImageUrl = careerImages[career];
+            playerSprite.changeImage(newImageUrl);
+        }
+        playerSprite.direction = Direction.DOWN;
+        playerSprite.isMoving = false;
     }
 }
 
-// 发送登录进入场景 2000
 function sendLoginEnterReq() {
     const msg = LoginEnterC2S.create({});
     const bin = LoginEnterC2S.encode(msg).finish();
@@ -695,81 +818,111 @@ function sendLoginEnterReq() {
     ws.send(encodePacket(bin, 2000));
 }
 
-// 2000协议返回解析，成功后启动10秒心跳
 function handleLoginEnterResp(bodyBuf) {
     const resp = LoginEnterS2C.decode(bodyBuf);
     const notice = resp.common_notice || { err_code: 0, err_msg: "无错误信息" };
     appendLog(`🔍 2000场景信息拉取结果：错误码:${notice.err_code} 描述:${notice.err_msg}`);
     if (notice.err_code === 0) {
         appendLog(`✅ 客户端完整登录流程执行完毕，启动10秒定时心跳`);
-        // 立即发送一次心跳，之后每10秒循环
         sendHeartbeat();
         heartbeatTimer = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL);
     }
 }
 
-// 发送创建角色请求 1003
-function sendCreateRoleReq(){
+// ===================== 创建角色 =====================
+function sendCreateRoleReq() {
     const name = document.getElementById('roleName').value.trim();
     const gender = Number(document.querySelector('input[name="gender"]:checked').value);
     const career = Number(document.getElementById('career').value);
-
-    if(!name){
-        alert("请输入角色名称");
-        return;
-    }
+    if (!name) { alert("请输入角色名称"); return; }
 
     const reqData = {
-        name:name,
-        server_id:globalLoginData.server_id,
-        plat_id:globalLoginData.plat_id,
-        gender:gender,
-        career:career
+        name, server_id: globalLoginData.server_id,
+        plat_id: globalLoginData.plat_id,
+        gender, career
     };
-
     const err = CreateRoleC2S.verify(reqData);
-    if(err){
-        appendLog("⚠️ 创建角色参数错误："+err);
+    if (err) {
+        appendLog("⚠️ 创建角色参数错误：" + err);
         return;
     }
     const msg = CreateRoleC2S.create(reqData);
     const bin = CreateRoleC2S.encode(msg).finish();
     appendLog(`📦 1003创建角色请求二进制:${bufferToHex(bin)}`);
-    ws.send(encodePacket(bin,1003));
+    ws.send(encodePacket(bin, 1003));
     submitCreateBtn.disabled = true;
 }
 
-// 创建角色返回处理
-function handleCreateRoleResp(bodyBuf){
+function handleCreateRoleResp(bodyBuf) {
     const resp = CreateRoleS2C.decode(bodyBuf);
     const notice = resp.common_notice || { err_code: -1, err_msg: "无错误信息" };
     appendLog(`🔍 创建角色结果：错误码${notice.err_code}，${notice.err_msg}`);
     submitCreateBtn.disabled = false;
-    if(notice.err_code === 0){
+    if (notice.err_code === 0) {
         appendLog(`🎉 角色【${resp.name}】创建成功，自动刷新角色列表`);
         createRoleForm.classList.add('hidden');
-        // 关闭创建面板，恢复上方角色列表与创建按钮
         roleListBox.classList.remove('hidden');
         createRoleBtn.classList.remove('hidden');
         sendSelectRoleReq();
     }
 }
 
-// function handleMovePosS2C(bodyBuf) {
-//     const resp = MovePosS2C.decode(bodyBuf);
-//     appendLog(`📡 玩家移动广播 | 角色ID:${resp.role_id} 地图ID:${resp.map_id} 坐标:(${resp.pos.x},${resp.pos.y})`);
-//     // 后续可扩展：判断role_id不是自己，在画布渲染其他玩家
-// }
+// ===================== 移动系统 =====================
+function playerMoveLoop() {
+    if (!currentSceneData) return;
+    let dx = 0, dy = 0;
+    if (keyState.w) dy -= MOVE_STEP;
+    if (keyState.s) dy += MOVE_STEP;
+    if (keyState.a) dx -= MOVE_STEP;
+    if (keyState.d) dx += MOVE_STEP;
+    if (dx === 0 && dy === 0) {
+        playerSprite.isMoving = false;
+        return;
+    }
 
+    playerSprite.setDirection(dx, dy);
+    playerSprite.isMoving = true;
+
+    currentSceneData.playerX += dx;
+    currentSceneData.playerY += dy;
+    const conf = currentSceneData.mapConf;
+    currentSceneData.playerX = Math.max(0, Math.min(conf.Width, currentSceneData.playerX));
+    currentSceneData.playerY = Math.max(0, Math.min(conf.Height, currentSceneData.playerY));
+
+    document.getElementById("playerPosText").textContent = `(${currentSceneData.playerX}, ${currentSceneData.playerY})`;
+    sendMovePosC2S(currentSceneData.playerX, currentSceneData.playerY);
+    renderSceneCanvas();
+}
+
+function sendMovePosC2S(x, y) {
+    const reqData = { pos: { x, y } };
+    const err = MovePosC2S.verify(reqData);
+    if (err) {
+        appendLog(`⚠️ 移动协议参数错误：${err}`);
+        return;
+    }
+    const msg = MovePosC2S.create(reqData);
+    const bin = MovePosC2S.encode(msg).finish();
+    appendLog(`🎮 发送移动协议[2002]，新坐标：(${x}, ${y})`);
+    ws.send(encodePacket(bin, 2002));
+}
+
+// ===================== 视野同步 =====================
 function handleMovePosS2C(bodyBuf) {
     const resp = MovePosS2C.decode(bodyBuf);
     const rid = String(resp.role_id);
     if (scenePlayerMap.has(rid)) {
         const player = scenePlayerMap.get(rid);
-        // 更新坐标
+        const dx = resp.pos.x - player.x;
+        const dy = resp.pos.y - player.y;
         player.x = resp.pos.x;
         player.y = resp.pos.y;
-        // appendLog(`🏃 角色【${player.name}】移动到坐标(${resp.pos.x},${resp.pos.y})`);
+
+        const sprite = getOtherPlayerSprite(rid);
+        sprite.setDirection(dx, dy);
+        sprite.isMoving = true;
+        if (sprite.moveTimeout) clearTimeout(sprite.moveTimeout);
+        sprite.moveTimeout = setTimeout(() => { sprite.isMoving = false; }, 300);
         renderSceneCanvas();
     }
 }
@@ -778,47 +931,32 @@ function handleRoleViewListS2C(bodyBuf) {
     try {
         const reader = new protobuf.Reader(bodyBuf);
         const SceneRoleType = root.lookupType("common.scene_role");
-
-        let type = 0;
-        let scene_id = 0;
-        let map_id = 0;
-        let roleList = [];
+        let type = 0, scene_id = 0, map_id = 0, roleList = [];
 
         while (reader.pos < reader.len) {
             const tag = reader.uint32();
             const fieldNum = tag >>> 3;
-            const wireType = tag & 7;
-
             switch (fieldNum) {
-                case 1:
-                    // type uint32
-                    type = reader.uint32();
-                    break;
-                case 2:
-                    // scene_id uint32
-                    scene_id = reader.uint32();
-                    break;
-                case 3:
-                    // map_id uint32
-                    map_id = reader.uint32();
-                    break;
-                case 4:
-                    // repeated common.scene_role 嵌套消息
+                case 1: type = reader.uint32(); break;
+                case 2: scene_id = reader.uint32(); break;
+                case 3: map_id = reader.uint32(); break;
+                case 4: {
                     const len = reader.uint32();
                     const subBuf = reader.buf.slice(reader.pos, reader.pos + len);
                     reader.pos += len;
                     const role = SceneRoleType.decode(subBuf);
                     roleList.push(role);
                     break;
-                default:
-                    reader.skipType(wireType);
-                    break;
+                }
+                default: reader.skipType(tag & 7);
             }
         }
+
         appendLog(`📋 视野玩家列表推送 | 类型:${type === 1 ? '全量刷新' : '增量新增'} 场景ID:${scene_id} 地图ID:${map_id} 玩家数量:${roleList.length}`);
 
         if (type === 1) {
             scenePlayerMap.clear();
+            otherPlayerSprites.clear();
         }
 
         roleList.forEach(role => {
@@ -829,32 +967,89 @@ function handleRoleViewListS2C(bodyBuf) {
                 x: role.pos.x,
                 y: role.pos.y
             });
+            const sprite = getOtherPlayerSprite(rid);
+            sprite.isMoving = false;
+            sprite.direction = Direction.DOWN;
             appendLog(`👤 进入视野：角色【${role.role_name}】 ID:${rid} 坐标(${role.pos.x},${role.pos.y})`);
         });
 
-// 关键保护：场景未初始化直接返回，不执行渲染
         if (!currentSceneData) {
             appendLog("⚠️ 场景数据未初始化，跳过渲染");
             return;
         }
         renderSceneCanvas();
     } catch (err) {
-        appendLog(`❌ 2003   视野玩家包解析异常：${err.message}，数据包长度：${bodyBuf.byteLength}`);
-        console.error("2003手动解析错误", err, bodyBuf);
+        appendLog(`❌ 2003 视野玩家包解析异常：${err.message}，数据包长度：${bodyBuf.byteLength}`);
+        console.error(err);
     }
 }
+
 function handleRoleViewDelS2C(bodyBuf) {
     const resp = RoleViewDelS2C.decode(bodyBuf);
     const rid = String(resp.role_id);
     if (scenePlayerMap.has(rid)) {
         const player = scenePlayerMap.get(rid);
         scenePlayerMap.delete(rid);
+        otherPlayerSprites.delete(rid);
         appendLog(`👋 离开视野：角色【${player.name}】 ID:${rid}`);
         renderSceneCanvas();
     }
 }
 
-// 登录点击事件
+// ===================== 键盘事件 =====================
+document.addEventListener('keydown', (e) => {
+    if (document.getElementById('scenePage').classList.contains('hidden')) return;
+    const key = e.key.toLowerCase();
+    if (['w', 'a', 's', 'd'].includes(key)) {
+        e.preventDefault();
+        keyState[key] = true;
+        if (!moveLoop) moveLoop = setInterval(playerMoveLoop, 50);
+    }
+});
+
+document.addEventListener('keyup', (e) => {
+    const key = e.key.toLowerCase();
+    if (['w', 'a', 's', 'd'].includes(key)) {
+        keyState[key] = false;
+        if (!keyState.w && !keyState.a && !keyState.s && !keyState.d) {
+            clearInterval(moveLoop);
+            moveLoop = null;
+            playerSprite.isMoving = false;
+            renderSceneCanvas();
+        }
+    }
+});
+
+// 方向键支持
+document.addEventListener('keydown', (e) => {
+    if (document.getElementById('scenePage').classList.contains('hidden')) return;
+    switch (e.key) {
+        case 'ArrowUp': keyState.w = true; e.preventDefault(); break;
+        case 'ArrowDown': keyState.s = true; e.preventDefault(); break;
+        case 'ArrowLeft': keyState.a = true; e.preventDefault(); break;
+        case 'ArrowRight': keyState.d = true; e.preventDefault(); break;
+    }
+    if ((keyState.w || keyState.a || keyState.s || keyState.d) && !moveLoop) {
+        moveLoop = setInterval(playerMoveLoop, 50);
+    }
+});
+
+document.addEventListener('keyup', (e) => {
+    switch (e.key) {
+        case 'ArrowUp': keyState.w = false; break;
+        case 'ArrowDown': keyState.s = false; break;
+        case 'ArrowLeft': keyState.a = false; break;
+        case 'ArrowRight': keyState.d = false; break;
+    }
+    if (!keyState.w && !keyState.a && !keyState.s && !keyState.d) {
+        clearInterval(moveLoop);
+        moveLoop = null;
+        playerSprite.isMoving = false;
+        renderSceneCanvas();
+    }
+});
+
+// ===================== UI 事件绑定 =====================
 loginBtn.addEventListener('click', async () => {
     loginBtn.disabled = true;
     appendLog("================ 开始登录流程 ================");
@@ -879,150 +1074,22 @@ loginBtn.addEventListener('click', async () => {
     }
 });
 
-// 打开创建角色表单
-createRoleBtn.addEventListener('click',()=>{
+createRoleBtn.addEventListener('click', () => {
     createRoleForm.classList.remove('hidden');
-    // 打开创建面板，隐藏上方角色列表和创建按钮
     roleListBox.classList.add('hidden');
     createRoleBtn.classList.add('hidden');
 });
-// 取消创建
-cancelCreateBtn.addEventListener('click',()=>{
+
+cancelCreateBtn.addEventListener('click', () => {
     createRoleForm.classList.add('hidden');
-    // 恢复角色列表、创建按钮显示
     roleListBox.classList.remove('hidden');
     createRoleBtn.classList.remove('hidden');
-    // 重置表单，清空上次填写内容
     document.getElementById('roleName').value = '';
     document.querySelector('input[name="gender"][value="1"]').checked = true;
     document.getElementById('career').value = '1';
 });
-// 提交创建角色
-submitCreateBtn.addEventListener('click',sendCreateRoleReq);
 
-// 键盘按下
-document.addEventListener('keydown', (e) => {
-    // 不在场景页直接返回，不处理移动
-    if(document.getElementById('scenePage').classList.contains('hidden')){
-        return;
-    }
-    const key = e.key.toLowerCase();
-    if (['w','a','s','d'].includes(key)) {
-        e.preventDefault();
-        keyState[key] = true;
-        // 启动移动循环（避免多次重复创建定时器）
-        if (!moveLoop) {
-            moveLoop = setInterval(playerMoveLoop, 50);
-        }
-    }
-});
+submitCreateBtn.addEventListener('click', sendCreateRoleReq);
 
-// 键盘抬起
-document.addEventListener('keyup', (e) => {
-    const key = e.key.toLowerCase();
-    if (['w','a','s','d'].includes(key)) {
-        keyState[key] = false;
-        // 所有按键松开则停止移动
-        if (!keyState.w && !keyState.a && !keyState.s && !keyState.d) {
-            clearInterval(moveLoop);
-            moveLoop = null;
-        }
-    }
-});
-
-document.addEventListener('keydown', (e) => {
-    // 只有场景页面非隐藏时，键盘移动才生效
-    if(document.getElementById('scenePage').classList.contains('hidden')){
-        return;
-    }
-    switch(e.key){
-        case 'ArrowUp':
-            keyState.w = true;
-            e.preventDefault();
-            break;
-        case 'ArrowDown':
-            keyState.s = true;
-            e.preventDefault();
-            break;
-        case 'ArrowLeft':
-            keyState.a = true;
-            e.preventDefault();
-            break;
-        case 'ArrowRight':
-            keyState.d = true;
-            e.preventDefault();
-            break;
-    }
-    // 只要任意移动键按下，启动循环
-    if ((keyState.w || keyState.a || keyState.s || keyState.d) && !moveLoop) {
-        moveLoop = setInterval(playerMoveLoop, 50);
-    }
-});
-
-document.addEventListener('keyup', (e) => {
-    switch(e.key){
-        case 'ArrowUp':
-            keyState.w = false;
-            break;
-        case 'ArrowDown':
-            keyState.s = false;
-            break;
-        case 'ArrowLeft':
-            keyState.a = false;
-            break;
-        case 'ArrowRight':
-            keyState.d = false;
-            break;
-    }
-    // 所有按键松开停止移动
-    if (!keyState.w && !keyState.a && !keyState.s && !keyState.d) {
-        clearInterval(moveLoop);
-        moveLoop = null;
-    }
-});
-
-function playerMoveLoop() {
-    if (!currentSceneData) return;
-    let dx = 0, dy = 0;
-    // 计算位移
-    if (keyState.w) dy -= MOVE_STEP;
-    if (keyState.s) dy += MOVE_STEP;
-    if (keyState.a) dx -= MOVE_STEP;
-    if (keyState.d) dx += MOVE_STEP;
-
-    if (dx === 0 && dy === 0) return;
-
-    // 更新当前玩家世界坐标
-    currentSceneData.playerX += dx;
-    currentSceneData.playerY += dy;
-
-    // 边界限制：防止走出地图
-    const conf = currentSceneData.mapConf;
-    currentSceneData.playerX = Math.max(0, Math.min(conf.Width, currentSceneData.playerX));
-    currentSceneData.playerY = Math.max(0, Math.min(conf.Height, currentSceneData.playerY));
-
-    // 更新页面坐标显示
-    document.getElementById("playerPosText").textContent = `(${currentSceneData.playerX}, ${currentSceneData.playerY})`;
-
-    // 发送2002移动协议到服务端
-    sendMovePosC2S(currentSceneData.playerX, currentSceneData.playerY);
-
-    // 重新渲染九宫格场景
-    renderSceneCanvas();
-}
-
-// 发送玩家移动协议 2002
-function sendMovePosC2S(x, y) {
-    const reqData = {
-        pos: { x: x, y: y }
-    };
-    const err = MovePosC2S.verify(reqData);
-    if (err) {
-        appendLog(`⚠️ 移动协议参数错误：${err}`);
-        return;
-    }
-    const msg = MovePosC2S.create(reqData);
-    const bin = MovePosC2S.encode(msg).finish();
-    appendLog(`🎮 发送移动协议[2002]，新坐标：(${x}, ${y})`);
-    ws.send(encodePacket(bin, 2002));
-}
+// ===================== 预加载提示 =====================
+console.log('🎮 游戏客户端已启动，等待登录...');
