@@ -86,8 +86,8 @@ func (s *Service) RpcEnterScene(state *State, rawSceneRole any) (any, error) {
 	}
 	if _, ok := state.sceneRoles[sceneRole.RoleID]; ok {
 		logger.Debugf("当前在scene进程 %+v", sceneRole)
-		s.sendRoleViewList(state, sceneRole, false)
 		s.BcastRpc.Send5s(rpcid.RpcSaveConnRole, sceneRole)
+		s.sendRoleViewList(state, sceneRole, false)
 		return sceneRole.Location, nil
 	}
 
@@ -99,9 +99,9 @@ func (s *Service) RpcEnterScene(state *State, rawSceneRole any) (any, error) {
 	sceneRole.SceneID = s.sceneID
 	sceneRole.MapID = s.MapID
 	state.sceneRoles[sceneRole.RoleID] = sceneRole
-	s.sendRoleViewList(state, sceneRole, isUpdateGrid)
 	s.BcastRpc.Send5s(rpcid.RpcSaveConnRole, sceneRole)
 	s.BattleRpc.Send5s(rpcid.RpcAddBattleRole, sceneRole.ToBattle())
+	s.sendRoleViewList(state, sceneRole, isUpdateGrid)
 	return sceneRole.Location, nil
 }
 

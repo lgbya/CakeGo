@@ -1,6 +1,7 @@
 package model
 
 import (
+	"cake/internal/game/def"
 	"cake/internal/gensvc/rpc"
 	"cake/proto/pb"
 	"google.golang.org/protobuf/proto"
@@ -15,6 +16,7 @@ type SceneRole struct {
 	RoleName string
 	ServerID uint32
 	PlatID   uint32
+	Career   def.Career
 	Location
 	*Conn
 	mu      sync.RWMutex
@@ -30,6 +32,7 @@ func NewSceneRole(roleState *Role) *SceneRole {
 		RoleName: roleState.Name,
 		ServerID: roleState.ServerID,
 		PlatID:   roleState.PlatID,
+		Career:   roleState.Career,
 	}
 }
 
@@ -40,6 +43,7 @@ func (s *SceneRole) Pb() *pb.SceneRole {
 		ServerId: s.ServerID,
 		PlatId:   s.PlatID,
 		Pos:      s.Pos.Pb(),
+		Career:   uint32(s.Career),
 	}
 }
 

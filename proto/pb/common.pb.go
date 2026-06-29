@@ -132,7 +132,8 @@ type SceneRole struct {
 	ServerId      uint32                 `protobuf:"varint,2,opt,name=server_id,json=serverId,proto3" json:"server_id,omitempty"` //服务器id
 	PlatId        uint32                 `protobuf:"varint,3,opt,name=plat_id,json=platId,proto3" json:"plat_id,omitempty"`       //平台id
 	RoleName      string                 `protobuf:"bytes,4,opt,name=role_name,json=roleName,proto3" json:"role_name,omitempty"`  //平台id
-	Pos           *Pos                   `protobuf:"bytes,5,opt,name=pos,proto3" json:"pos,omitempty"`
+	Career        uint32                 `protobuf:"varint,5,opt,name=career,proto3" json:"career,omitempty"`                     //职业
+	Pos           *Pos                   `protobuf:"bytes,6,opt,name=pos,proto3" json:"pos,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -195,6 +196,13 @@ func (x *SceneRole) GetRoleName() string {
 	return ""
 }
 
+func (x *SceneRole) GetCareer() uint32 {
+	if x != nil {
+		return x.Career
+	}
+	return 0
+}
+
 func (x *SceneRole) GetPos() *Pos {
 	if x != nil {
 		return x.Pos
@@ -229,14 +237,15 @@ const file_proto_common_proto_rawDesc = "" +
 	"\aerr_msg\x18\x02 \x01(\tR\x06errMsg\"!\n" +
 	"\x03pos\x12\f\n" +
 	"\x01x\x18\x01 \x01(\rR\x01x\x12\f\n" +
-	"\x01y\x18\x02 \x01(\rR\x01y\"\x97\x01\n" +
+	"\x01y\x18\x02 \x01(\rR\x01y\"\xaf\x01\n" +
 	"\n" +
 	"scene_role\x12\x17\n" +
 	"\arole_id\x18\x01 \x01(\x04R\x06roleId\x12\x1b\n" +
 	"\tserver_id\x18\x02 \x01(\rR\bserverId\x12\x17\n" +
 	"\aplat_id\x18\x03 \x01(\rR\x06platId\x12\x1b\n" +
-	"\trole_name\x18\x04 \x01(\tR\broleName\x12\x1d\n" +
-	"\x03pos\x18\x05 \x01(\v2\v.common.posR\x03pos:8\n" +
+	"\trole_name\x18\x04 \x01(\tR\broleName\x12\x16\n" +
+	"\x06career\x18\x05 \x01(\rR\x06career\x12\x1d\n" +
+	"\x03pos\x18\x06 \x01(\v2\v.common.posR\x03pos:8\n" +
 	"\x06cmd_id\x12\x1f.google.protobuf.MessageOptions\x18ц\x03 \x01(\x05R\x05cmdIdB\rZ\vproto/pb;pbb\x06proto3"
 
 var (

@@ -9,5 +9,5 @@ import (
 func main() {
 	env.Init()
 	logger.Init()
-	client.NewClient(20)
+	client.NewClient(1)
 }

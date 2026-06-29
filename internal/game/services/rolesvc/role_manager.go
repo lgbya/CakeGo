@@ -41,7 +41,6 @@ func (m *manager) StartRole(roleMod *model.Role) (*rpc.Service, error) {
 		if !exists {
 			return oldRoleSvc, false
 		}
-
 		if !oldRoleSvc.IsClosed() {
 			// 服务正常运行，拒绝重复登录
 			retSvc = nil

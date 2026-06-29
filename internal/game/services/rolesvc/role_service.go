@@ -95,7 +95,7 @@ func (s *Service) RpcUpdateConn(state *State, rawConn any) (any, error) {
 // 网关进程关会发一条消息到这里
 func (s *Service) RpcConnClose(state *State, _ any) (any, error) {
 	state.Conn.CloseConn()
-	s.AddTimer("TimerStopRole", 10*time.Second, 1, s.TimerStopRole, nil)
+	s.AddTimer("TimerStopRole", 3*time.Second, 1, s.TimerStopRole, nil)
 	return nil, nil
 }
 

@@ -63,7 +63,7 @@ func (c *Client) EnterSceneS2C(cmd uint32, rawMsg proto.Message) {
 	c.Pos = model.Pos{X: int(msg.Pos.X), Y: int(msg.Pos.Y)}
 	c.Location.SceneID = msg.SceneId
 	c.Location.MapID = msg.MapId
-	c.StartAutoWalk()
+	//c.StartAutoWalk()
 	//if msg.MapId == def.MainSceneMapID {
 	//	cnt.Add(1)
 	//	if cnt.Load()%2 == 0 {

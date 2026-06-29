@@ -29,17 +29,17 @@ func (s *Service) updateRoleGrid(sceneRole *model.SceneRole) bool {
 	oldGridPos := s.GetGridPos(sceneRole.OldPos)
 
 	// 已经在目标格子，无需更新
-	_, ok = newCell.SceneRoles[RoleID]
+	_, ok = newCell.Roles[RoleID]
 	if oldGridPos == newGridPos && ok {
 		return false
 	}
 
 	//  清理角色【旧格子】中的数据（核心修复点）
 	if oldCell, ok := s.Grids[oldGridPos]; ok {
-		delete(oldCell.SceneRoles, RoleID)
+		delete(oldCell.Roles, RoleID)
 	}
 
-	newCell.SceneRoles[RoleID] = struct{}{}
+	newCell.Roles[RoleID] = struct{}{}
 	//  更新角色身上绑定的格子坐标，必须同步维护
 	return true
 }
@@ -56,7 +56,7 @@ func (s *Service) delRoleGrid(sceneRole *model.SceneRole) bool {
 
 	// 判断格子是否存在就删除
 	if cell, ok := s.Grids[gridPos]; ok {
-		delete(cell.SceneRoles, RoleID)
+		delete(cell.Roles, RoleID)
 	}
 	return true
 }
@@ -66,8 +66,8 @@ func (s *Service) initNineGirds() map[model.Pos]Cell {
 	for y := -1; y <= s.MaxGridY; y++ {
 		for x := -1; x <= s.MaxGridX; x++ {
 			grids[model.Pos{X: x, Y: y}] = Cell{
-				SceneRoles: make(map[uint64]struct{}),
-				Units:      make(map[uint64]struct{}),
+				Roles: make(map[uint64]struct{}),
+				Units: make(map[uint64]struct{}),
 			}
 		}
 	}
@@ -91,8 +91,9 @@ func (s *Service) get9GridViewRoles(center model.Pos) map[uint64]struct{} {
 		for dy := -1; dy <= 1; dy++ {
 			gx := center.X + dx
 			gy := center.Y + dy
+
 			// 边界防护：过滤地图范围外的格子，避免无效查询
-			if gx < 0 || gy < 0 || gx >= s.MaxGridX || gy >= s.MaxGridY {
+			if gx < 0 || gy < 0 || gx > s.MaxGridX || gy > s.MaxGridY {
 				continue
 			}
 			grid := model.Pos{
@@ -104,7 +105,7 @@ func (s *Service) get9GridViewRoles(center model.Pos) map[uint64]struct{} {
 				continue
 			}
 			// 收集当前格子内所有角色
-			for rid := range cell.SceneRoles {
+			for rid := range cell.Roles {
 				viewSet[rid] = struct{}{}
 			}
 		}
@@ -114,8 +115,8 @@ func (s *Service) get9GridViewRoles(center model.Pos) map[uint64]struct{} {
 
 func (s *Service) sendRoleViewList(state *State, sceneRole *model.SceneRole, isUpdateGrid bool) {
 	//获取当前九宫格玩家
-	viewRoleIDs := s.get9GridViewRoles(sceneRole.GridPos)
 
+	viewRoleIDs := s.get9GridViewRoles(sceneRole.GridPos)
 	//其他人发新增
 	msg := &pb.RoleViewListS2C{
 		Type:       def.RoleViewTypeAdd,

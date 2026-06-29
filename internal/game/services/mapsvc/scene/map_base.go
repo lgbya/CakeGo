@@ -7,8 +7,8 @@ import (
 )
 
 type Cell struct {
-	SceneRoles map[uint64]struct{} // 玩家ID→玩家
-	Units      map[uint64]struct{} // 怪物ID→怪物
+	Roles map[uint64]struct{} // 玩家ID→玩家
+	Units map[uint64]struct{} // 怪物ID→怪物
 }
 
 type MapBase struct {

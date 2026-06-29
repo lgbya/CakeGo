@@ -231,7 +231,8 @@ const root = protobuf.Root.fromJSON({
                         server_id: { type: "uint32", id: 2 },
                         plat_id: { type: "uint32", id: 3 },
                         role_name: { type: "string", id: 4 },
-                        pos: { type: "pos", id: 5 }
+                        career: { type: "uint32", id: 5 },
+                        pos: { type: "pos", id: 6 }
                     }
                 },
             }
@@ -607,6 +608,11 @@ function renderSceneCanvas() {
 
         // 获取或创建精灵
         let sprite = getOtherPlayerSprite(player.roleId);
+        const careerImages = SPRITE_CONFIG.CAREER_IMAGES;
+        if (careerImages && careerImages[player.career]) {
+            const newImageUrl = careerImages[player.career];
+            sprite.changeImage(newImageUrl);
+        }
         sprite.update();
 
         // 绘制名字
@@ -965,7 +971,8 @@ function handleRoleViewListS2C(bodyBuf) {
                 roleId: rid,
                 name: role.role_name,
                 x: role.pos.x,
-                y: role.pos.y
+                y: role.pos.y,
+                career: role.career,
             });
             const sprite = getOtherPlayerSprite(rid);
             sprite.isMoving = false;

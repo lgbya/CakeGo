@@ -47,7 +47,6 @@ func (*Service) TimerCheckHeartbeat(rawRole any, _ any) error {
 		heartbeat.BadCnt = 0
 	}
 	state.Heartbeat = heartbeat
-	logger.Debugf("心跳%+v", state.Heartbeat)
 
 	return nil
 }

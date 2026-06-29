@@ -23,5 +23,6 @@ message scene_role {
   uint32 server_id = 2; //服务器id
   uint32 plat_id = 3; //平台id
   string role_name = 4; //平台id
-  pos pos = 5;
+  uint32 career = 5; //职业
+  pos pos = 6;
 }
