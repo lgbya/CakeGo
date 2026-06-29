@@ -184,7 +184,7 @@ func (c *Client) StartAutoWalk() {
 				if runTimes >= durationSec {
 					currentDir = c.dirs[rand.Intn(len(c.dirs))]
 					runTimes = 0
-					logger.Infof("【方向切换】玩家[%s]已连续行走%d秒，更换新方向 dx:%d dy:%d",
+					logger.Debugf("【方向切换】玩家[%s]已连续行走%d秒，更换新方向 dx:%d dy:%d",
 						c.Account, durationSec, currentDir.dx, currentDir.dy)
 				}
 
