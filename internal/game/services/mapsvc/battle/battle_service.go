@@ -7,8 +7,6 @@ import (
 	"cake/internal/pkg/logger"
 	"cake/internal/util/sys"
 	"cake/proto/pb"
-	"errors"
-	"fmt"
 	"strconv"
 	"time"
 )
@@ -23,7 +21,7 @@ type Service struct {
 func StartService(id uint32, sceneRpc *rpc.Service) (*rpc.Service, error) {
 	s := &Service{
 		ID:       id,
-		msgCache: make([]*rpc.Msg, 0, 32),
+		msgCache: make([]*rpc.Msg, 0, 10000),
 		sceneRpc: sceneRpc,
 	}
 	cfg := rpc.NewCfg()
@@ -77,7 +75,8 @@ func (s *Service) TimerFrameCalculation(rawState, _ any) error {
 
 func (s *Service) AddMsgCache(msg *rpc.Msg) error {
 	if len(s.msgCache) >= cap(s.msgCache) {
-		return errors.New(fmt.Sprintf("战斗消息缓存已满，丢弃消息:%v", msg))
+		logger.Errorf("战斗消息缓存已满，丢弃消息:%v", msg)
+		return nil
 	}
 	s.msgCache = append(s.msgCache, msg)
 	return nil
