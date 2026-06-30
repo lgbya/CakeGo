@@ -52,6 +52,9 @@ func NewClient(max int) {
 			client.regCbFn()
 			client.start()
 		})
+		if i%100 == 0 {
+			time.Sleep(30 * time.Second)
+		}
 	}
 	wg.Wait()
 }
@@ -150,7 +153,7 @@ func (c *Client) StartAutoWalk() {
 		return
 	}
 	// 初始化1秒定时器
-	c.autoWalkTicker = time.NewTicker(1 * time.Second)
+	c.autoWalkTicker = time.NewTicker(500 * time.Millisecond)
 	c.autoWalkStopCh = make(chan struct{})
 
 	go func() {
