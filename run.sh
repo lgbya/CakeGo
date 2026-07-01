@@ -55,6 +55,16 @@ proto)
     sh ./scripts/proto.sh
     ;;
 
+memory)
+    if [ $# -ne 1 ]; then
+        echo "错误：指令【memory】不需要携带任何额外参数"
+        show_help
+        exit 1
+    fi
+    echo "===== 开始执行脚本 scripts/check_memory.sh ====="
+    sh ./scripts/check_memory.sh
+    ;;
+
 
 "")
     # 没有传任何参数

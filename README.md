@@ -4,7 +4,7 @@
 ## 一、项目简介
 CakeGo 是一个基于 Golang 协程的轻量级 Actor 模型游戏服务框架，借鉴了 Erlang 成熟网游的进程架构（gen_server），实现了网关、玩家、场景等多 Actor 隔离运行。
 
-作者有 8 年 Erlang 游戏后端经验，该框架的设计思路源于支撑过 **单服 3 万同时在线**、**MMO 项目登顶韩国 Google Play 人气榜** 的生产实践。
+作者有 9 年 Erlang 游戏后端经验，该框架的设计思路源于支撑过 **单服 3 万同时在线**、**MMO 项目登顶韩国 Google Play 人气榜** 的生产实践。
 
 **核心设计：**
 - **Actor 隔离**：每个玩家/场景作为独立 Actor，通过消息队列异步通信
@@ -39,6 +39,7 @@ CakeGo/
 ├── proto                   # Protobuf协议定义文件
 ├── scripts                 # Shell运维脚本
 ├── sql                     # MySQL建表语句、初始化数据
+├── docs                    # 性能优化日志
 └── test             		# 测试
 	├── tcpclient           # TCP压测客户端、模拟多玩家登录测试
 	└── wsclient 			# websocket测试页面 
@@ -101,6 +102,15 @@ const WS_URL = `ws://自己的ip地址或域名/ws`;
 #sh run.sh proto 
 例：sh run.sh proto
 
+#内存分析脚本
+#sh run.sh proto 
+例：sh run.sh proto
+
+#pprof
+#分析历史分配内存堆栈（包括已被 GC 回收的） 定位GC 压力来源（高频创建临时对象）
+go tool pprof http://localhost:6060/debug/pprof/allocs
+#当前存活内存 排查内存泄漏
+go tool pprof http://localhost:6060/debug/pprof/heap
 ```
 # 五、绑定协议路由
 ### 1. 绑定网关的路由
