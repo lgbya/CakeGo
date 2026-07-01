@@ -47,8 +47,8 @@ func (s *Service) TimerFrameCalculation(rawState, _ any) error {
 	//logger.Debugf("帧计算计算启动")
 	state := rawState.(*State)
 	msgs := s.msgCache
-	// 复用容量清空，不会扩容GC
-	s.msgCache = make([]*rpc.Msg, 0, cap(s.msgCache))
+	// 重置长度，保留容量（不分配新内存）
+	s.msgCache = s.msgCache[:0]
 	for _, msg := range msgs {
 		sys.SafeRun(func() {
 			defer s.PutMsg(msg)
