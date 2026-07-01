@@ -2,9 +2,18 @@
 ## 借鉴erlang的gen server实现进程单游戏服Actor 模型的mmo游戏框架
 
 ## 一、项目简介
-基于 Golang 协程实现轻量 Actor 模型，借鉴 Erlang 网游成熟进程架构，网关+玩家+场景多Actor隔离。
+CakeGo 是一个基于 Golang 协程的轻量级 Actor 模型游戏服务框架，借鉴了 Erlang 成熟网游的进程架构（gen_server），实现了网关、玩家、场景等多 Actor 隔离运行。
 
-线上演示地址:http://175.178.52.251/
+作者有 9 年 Erlang 游戏后端经验，该框架的设计思路源于支撑过 **单服 3 万同时在线**、**MMO 项目登顶韩国 Google Play 人气榜** 的生产实践。
+
+**核心设计：**
+- **Actor 隔离**：每个玩家/场景作为独立 Actor，通过消息队列异步通信
+- **编译期 RPC 生成**：基于 AST 静态分析，消除运行时反射开销
+- **全局节拍定时器 + GB 树**：统一调度，支持大规模任务频繁增删
+- **消息缓冲 + 数据回滚**：队列满时自动转存备份，State 快照机制保障数据一致性
+
+**线上演示：** http://175.178.52.251/
+
 ## 二、目录结构
 ```text
 CakeGo/
@@ -268,3 +277,10 @@ func (s *State) Restore(rawData any) {
 
 var _ rpc.GenState = new(State)
 ```
+
+## 搜索关键词
+- Go游戏服务器框架
+- Actor模型 Go
+- 高并发游戏后端
+- Go游戏服务端
+- Erlang转Go
