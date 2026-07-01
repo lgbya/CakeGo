@@ -4,7 +4,7 @@ let currentSelectRole = null;
 let heartbeatTimer = null; // 心跳定时器
 const HEARTBEAT_INTERVAL = 10000; // 每10秒发送一次心跳
 // const WS_URL = "ws://192.168.0.116:8889/ws";
-const WS_URL = `ws://${window.location.host}:8889/ws`;
+const WS_URL = `ws://${window.location.host}/ws`;
 
 // ===================== 精灵图系统配置 =====================
 const SPRITE_CONFIG = {
@@ -830,7 +830,14 @@ function handleLoginEnterResp(bodyBuf) {
     appendLog(`🔍 2000场景信息拉取结果：错误码:${notice.err_code} 描述:${notice.err_msg}`);
     if (notice.err_code === 0) {
         appendLog(`✅ 客户端完整登录流程执行完毕，启动10秒定时心跳`);
-        sendHeartbeat();
+        // ===== 修复开始 =====
+        if (heartbeatTimer) {
+            clearInterval(heartbeatTimer);
+            heartbeatTimer = null;
+            appendLog("🔄 已清除旧心跳定时器");
+        }
+        // ===== 修复结束 =====
+        sendHeartbeat();                         // 立即发送一次
         heartbeatTimer = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL);
     }
 }
