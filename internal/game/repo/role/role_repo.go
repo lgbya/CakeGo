@@ -6,6 +6,7 @@ import (
 	"cake/internal/pkg/db"
 	"cake/internal/pkg/logger"
 	"cake/internal/util/uuid"
+	"encoding/json"
 	"errors"
 	"sync"
 	"sync/atomic"
@@ -74,9 +75,19 @@ func (r *repo) UpdateRole(role *model.RolePO) error {
 		return errors.New("invalid role_id")
 	}
 	logger.Debugf("更新角色 %d", role.RoleID)
+	raw, _ := json.Marshal(role.Data)
 	return db.DbInst().Model(&model.RolePO{}).Where("role_id = ?", role.RoleID).
 		Select("account", "server_id", "plat_id", "name", "gender", "career", "lv", "data").
-		Updates(role).Error
+		UpdateColumns(map[string]interface{}{
+			"account":   role.Account,
+			"server_id": role.ServerID,
+			"plat_id":   role.PlatID,
+			"name":      role.Name,
+			"gender":    role.Gender,
+			"career":    role.Career,
+			"lv":        role.Lv,
+			"data":      raw,
+		}).Error
 }
 
 // 检查角色名唯一

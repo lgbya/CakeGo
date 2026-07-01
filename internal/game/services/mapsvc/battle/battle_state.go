@@ -8,7 +8,10 @@ type State struct {
 }
 
 func newState() *State {
-	return &State{battleRoles: make(map[uint64]model.BattleRole)}
+	return &State{
+		battleRoles:  make(map[uint64]model.BattleRole),
+		dirtyRoleIDs: make(map[uint64]struct{}),
+	}
 }
 
 func (s *State) SetDirty(roleID uint64) {

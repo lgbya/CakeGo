@@ -8,14 +8,16 @@ import (
 	"cake/internal/util/sys"
 	"cake/proto/pb"
 	"strconv"
+	"sync"
 	"time"
 )
 
 type Service struct {
 	*rpc.Service
-	ID       uint32
-	msgCache []*rpc.Msg
-	sceneRpc *rpc.Service
+	ID             uint32
+	msgCache       []*rpc.Msg
+	sceneRpc       *rpc.Service
+	battleRolePool sync.Pool
 }
 
 func StartService(id uint32, sceneRpc *rpc.Service) (*rpc.Service, error) {
@@ -23,6 +25,9 @@ func StartService(id uint32, sceneRpc *rpc.Service) (*rpc.Service, error) {
 		ID:       id,
 		msgCache: make([]*rpc.Msg, 0, 10000),
 		sceneRpc: sceneRpc,
+	}
+	s.battleRolePool.New = func() interface{} {
+		return make(map[uint64]model.BattleRole, 64)
 	}
 	cfg := rpc.NewCfg()
 	cfg.Ctx = sceneRpc.GetCtx()
@@ -59,7 +64,13 @@ func (s *Service) TimerFrameCalculation(rawState, _ any) error {
 		})
 	}
 
-	emptyBattleRoles := make(map[uint64]model.BattleRole, len(state.dirtyRoleIDs))
+	emptyBattleRoles := s.battleRolePool.Get().(map[uint64]model.BattleRole)
+	defer s.battleRolePool.Put(emptyBattleRoles)
+	for k := range emptyBattleRoles {
+		delete(emptyBattleRoles, k)
+	}
+
+	//emptyBattleRoles := make(map[uint64]model.BattleRole, len(state.dirtyRoleIDs))
 	for roleID := range state.dirtyRoleIDs {
 		battleRole, ok := state.battleRoles[roleID]
 		if !ok {
@@ -67,9 +78,13 @@ func (s *Service) TimerFrameCalculation(rawState, _ any) error {
 		}
 		emptyBattleRoles[roleID] = battleRole
 	}
-	//帧结束
-	state.dirtyRoleIDs = make(map[uint64]struct{})
+
+	for k := range state.dirtyRoleIDs {
+		delete(state.dirtyRoleIDs, k)
+	}
+
 	s.sceneRpc.Send5s(rpcid.RpcSyncRoleStates, &emptyBattleRoles)
+	//帧结束
 	return nil
 }
 

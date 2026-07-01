@@ -70,7 +70,7 @@ func InitMysql() {
 	businessDSN := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		user, pass, host, port, name)
 	db, err := gorm.Open(mysql.Open(businessDSN), &gorm.Config{
-		//Logger: logger.Default.LogMode(logger.Info),
+		//Logger: logger.Default.LogMode(logger.Silent),
 	})
 	if err != nil {
 		panic(fmt.Errorf("GORM连接业务库失败: %w", err))

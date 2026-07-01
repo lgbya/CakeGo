@@ -1,21 +1,21 @@
 // Code generated rpcgen.go; DO NOT EDIT
 package rpcid	
 
-const RpcAddBattleRole = "RpcAddBattleRole"
+const RpcDelBattleRole = "RpcDelBattleRole"
+const RpcMovePath = "RpcMovePath"
+const RpcDelConnRole = "RpcDelConnRole"
 const RpcRoleCmd = "RpcRoleCmd"
 const RpcSyncRoleStates = "RpcSyncRoleStates"
-const RpcAoiNiceGrid = "RpcAoiNiceGrid"
-const RpcHeartbeat = "RpcHeartbeat"
-const RpcConnClose = "RpcConnClose"
-const RpcMovePath = "RpcMovePath"
+const RpcUpdateConn = "RpcUpdateConn"
 const RpcTest = "RpcTest"
 const RpcSaveConnRole = "RpcSaveConnRole"
-const RpcLeaveScene = "RpcLeaveScene"
-const RpcUpdateConn = "RpcUpdateConn"
-const RpcDelBattleRole = "RpcDelBattleRole"
-const RpcDelConnRole = "RpcDelConnRole"
-const RpcEnterScene = "RpcEnterScene"
 const RpcSaveSceneRole = "RpcSaveSceneRole"
+const RpcAddBattleRole = "RpcAddBattleRole"
+const RpcAoiNiceGrid = "RpcAoiNiceGrid"
+const RpcLeaveScene = "RpcLeaveScene"
+const RpcConnClose = "RpcConnClose"
+const RpcEnterScene = "RpcEnterScene"
+const RpcHeartbeat = "RpcHeartbeat"
 
 
 
