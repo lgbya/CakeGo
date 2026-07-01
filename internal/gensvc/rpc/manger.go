@@ -85,6 +85,9 @@ func (m *Manager) StartSvc(name string, module GenService, cfg Cfg) (*Service, e
 
 		s.loop(startChan)
 	})
+
+	timer := time.NewTicker(cfg.StartTimeout)
+	defer timer.Stop()
 	for {
 		select {
 		case startInfo := <-startChan:
@@ -92,7 +95,7 @@ func (m *Manager) StartSvc(name string, module GenService, cfg Cfg) (*Service, e
 				return nil, startInfo.err
 			}
 			return s, nil
-		case <-time.After(cfg.StartTimeout):
+		case <-timer.C:
 			s.cancel()
 			m.services.Delete(name)
 			return nil, errors.New("timeout")

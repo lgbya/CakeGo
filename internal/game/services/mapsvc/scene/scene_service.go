@@ -92,6 +92,7 @@ func (s *Service) RpcEnterScene(state *State, rawSceneRole any) (any, error) {
 	}
 
 	if sceneRole.MapID != s.MapID {
+		//随机出生点
 		sceneRole.UpdatePos(s.SpawnPos)
 	}
 

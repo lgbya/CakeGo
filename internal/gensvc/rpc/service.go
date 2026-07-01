@@ -19,7 +19,7 @@ const (
 	Timeout5s  = 5 * time.Second
 	Timeout10s = 10 * time.Second
 
-	PendingMaxLen = 1000
+	PendingMaxLen = 10000
 )
 
 type GenService interface {

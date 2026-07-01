@@ -87,17 +87,19 @@ func SafeSend5s[T any](ch chan T, msg T) bool {
 func SafeSendTimeout[T any](ch chan T, msg T, timeout time.Duration) bool {
 	defer Recover("SafeSendTimeout")
 
-	if timeout > 0 {
-		select {
-		case ch <- msg:
-			return true
-		case <-time.After(timeout):
-			logger.Warnf("chan已经满了, 丢失msg:%v", msg)
-			return false
-		}
-	} else {
+	if timeout <= 0 {
 		ch <- msg
 		return true
+	}
+
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+	select {
+	case ch <- msg:
+		return true
+	case <-timer.C:
+		logger.Warnf("chan已经满了, 丢失msg:%v", msg)
+		return false
 	}
 }
 
